@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <canvas
+      width="550"
+      height="400"
+      id="canvas"
+      style="background-color: #ccc"
+    ></canvas>
+    <script src="./flashthem.js"></script>
+    <script>
+      const { Stage, Sprite, Event } = flashthem;
+
+      const stage = new Stage(document.getElementById("canvas"), 550, 400);
+      const arr = [];
+      for (let i = 0; i < 10; i++) {
+        const sp = new Sprite();
+        sp.graphics.beginFill("#ff0000");
+        const w = Math.random() * 50 + 10;
+        const h = Math.random() * 50 + 10;
+        sp.graphics.drawRect(-w / 2, -h / 2, w, h);
+
+        sp.graphics.lineStyle(2, "#0000ff");
+        sp.graphics.drawCircle(20, 0, 10);
+        sp.x = Math.random() * 500;
+        sp.y = Math.random() * 400;
+        stage.addChild(sp);
+        arr.push(sp);
+        sp.vx = Math.random() * 10 - 5;
+        sp.vy = Math.random() * 10 - 5;
+      }
+      arr[0].addEventListener("click", (evt) => {
+        console.log(evt);
+      });
+      let i = 0;
+      stage.addEventListener(Event.ENTER_FRAME, () => {
+        return
+        i++;
+        for (let t of arr) {
+          t.x += t.vx;
+          t.y += t.vy;
+          if (t.x >= 500 || t.x < 0) t.vx *= -1;
+          if (t.y >= 400 || t.y < 0) t.vy *= -1;
+          t.rotation += t.vx / 100;
+          t.scaleX = t.scaleY = Math.sin((i * Math.PI) / 180);
+        }
+      });
+      console.log(arr);
+    </script>
+  </body>
+</html>
