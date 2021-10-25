@@ -10,47 +10,143 @@
       width="550"
       height="400"
       id="canvas"
-      style="background-color: #ccc"
+      style="background-color: #ccc; margin: 50px"
+    ></canvas>
+    <canvas
+      width="550"
+      height="400"
+      id="canvas2"
+      style="background-color: #ddd; margin: 50px"
     ></canvas>
     <script src="./flashthem.js"></script>
     <script>
-      const { Stage, Sprite, Event } = flashthem;
+      const { Stage, Sprite, Event, Bitmap, TextField, MovieClip, Rect } =
+        flashthem;
 
       const stage = new Stage(document.getElementById("canvas"), 550, 400);
-      const arr = [];
-      for (let i = 0; i < 10; i++) {
-        const sp = new Sprite();
-        sp.graphics.beginFill("#ff0000");
-        const w = Math.random() * 50 + 10;
-        const h = Math.random() * 50 + 10;
-        sp.graphics.drawRect(-w / 2, -h / 2, w, h);
+      stage.addCanvas(document.getElementById("canvas2"));
+      const role = new MovieClip("./st.png", []);
+      role.width = 100;
+      role.fps = 6;
+      role.height = 100;
+      fetch("./st.json")
+        .then((data) => data.json())
+        .then((json) => {
+          role.setClips(json.frames.map((o) => o.frame));
+          stage.addChild(role);
+        });
 
-        sp.graphics.lineStyle(2, "#0000ff");
-        sp.graphics.drawCircle(20, 0, 10);
-        sp.x = Math.random() * 500;
-        sp.y = Math.random() * 400;
-        stage.addChild(sp);
-        arr.push(sp);
-        sp.vx = Math.random() * 10 - 5;
-        sp.vy = Math.random() * 10 - 5;
-      }
-      arr[0].addEventListener("click", (evt) => {
-        console.log(evt);
+      const rect = new Rect(10, 10, "blue");
+      // role.addChild(rect);
+      rect.x = 66;
+      rect.y = 40;
+      const keys = [0, 0, 0, 0];
+      const g = 0.98;
+      // role.width = 100;
+
+      const bt = new Bitmap("./role.png");
+      bt.blendMode = "xor";
+      stage.addChild(bt);
+      bt.x = bt.y = 100;
+      bt.x = 100;
+      bt.on("load", function () {
+        // bt.graphics.clear();
       });
-      let i = 0;
-      stage.addEventListener(Event.ENTER_FRAME, () => {
-        return
-        i++;
-        for (let t of arr) {
-          t.x += t.vx;
-          t.y += t.vy;
-          if (t.x >= 500 || t.x < 0) t.vx *= -1;
-          if (t.y >= 400 || t.y < 0) t.vy *= -1;
-          t.rotation += t.vx / 100;
-          t.scaleX = t.scaleY = Math.sin((i * Math.PI) / 180);
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight") {
+          keys[3] = 1;
+        }
+        if (e.key === "ArrowLeft") {
+          keys[2] = 1;
+        }
+        if (e.key === "ArrowUp") {
+          vy = -5;
+          keys[0] = 1;
+        }
+        if (e.key === "ArrowDown") {
+          vy = 5;
+          keys[1] = 1;
         }
       });
-      console.log(arr);
+      document.addEventListener("keyup", (e) => {
+        if (e.key === "ArrowRight") {
+          keys[3] = 0;
+        }
+        if (e.key === "ArrowLeft") {
+          keys[2] = 0;
+        }
+        if (e.key === "ArrowUp") {
+          keys[0] = 0;
+        }
+        if (e.key === "ArrowDown") {
+          vy = 5;
+          keys[1] = 0;
+        }
+      });
+      let vx = 0,
+        vy = 0;
+      stage.on("enter-frame", (e) => {
+        if (keys[0]) {
+          vy = -2;
+        } else if (keys[1]) {
+          vy = 2;
+        }
+        if (keys[2]) {
+          vx = -2;
+        } else if (keys[3]) {
+          vx = 2;
+        }
+        role.x += vx;
+        role.y += vy;
+        role.scaleX = vx > 0 ? 1 : -1;
+
+        if (keys.join("") === "0000") {
+          vx *= 0.5;
+          vy *= 0.5;
+          if (vx <= 0) vx = 0;
+          if (vy <= 0) vy = 0;
+          role.pause();
+        } else {
+          role.play();
+        }
+        rect.rotation += 0.1;
+        // bt.rotation += 0.1;
+      });
+      // const sp = new Sprite();
+      // sp.graphics.lineStyle(2, "yellow");
+      // sp.graphics.beginFill("red");
+      // sp.graphics.drawRect(0, 0, 100, 100);
+      // stage.addChild(sp);
+      // sp.x = sp.y = 200;
+
+      // const t = new TextField("hello");
+      // stage.addChild(t);
+
+      // t.x = 100;
+      // t.y = 100;
+
+      // document.addEventListener("keyup", (e) => {
+      //   vx = 0;
+      //   vy = 0;
+      // });
+
+      // document.querySelector("#canvas").onclick = make;
+      // function make(e) {
+      //   const mv = new MovieClip("./run.png", 46, 50);
+      //   mv.fps = 12;
+      //   mv.width = 100;
+      //   mv.height = 100;
+      //   sp.addChild(mv);
+      //   // mv.x = e.offsetX - 48;
+      //   // mv.y = e.offsetY - 48;
+      //   // mv.loop = false;
+      //   mv.on("complete", () => {
+      //     console.log("播放完成");
+      //     // mv.remove();
+      //     // console.log(stage.children.length);
+      //   });
+      // }
     </script>
   </body>
 </html>

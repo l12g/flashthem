@@ -6,143 +6,68 @@
 
   class Renderer {
       constructor(stage) {
+          this._extraContext = [];
           this._stage = stage;
-          this._offCanvas = new OffscreenCanvas(this.canvas.width, this.canvas.height);
-          this.context.lineWidth = 0;
-          this.context.strokeStyle = null;
           this.canvas.addEventListener("click", (e) => {
               this._mouseEvent = e;
+              // console.log(e);
+          });
+          this.canvas.addEventListener("mousemove", (e) => {
+              this._mouseEvent = e;
+              // console.log(e);
           });
       }
-      get offContext() {
-          return this._offCanvas.getContext("2d");
-      }
       get context() {
-          return this._offCanvas.getContext("2d");
-      }
-      get displayContext() {
           return this.canvas.getContext("2d");
       }
       get canvas() {
           return this._stage.canvas;
       }
+      addContext(ctx) {
+          this._extraContext.push(ctx);
+      }
       draw() {
           this.clear();
-          for (let i = 0, len = this._stage.children.length; i < len; i++) {
-              const child = this._stage.children[i];
-              child.draw(this, this._mouseEvent);
-          }
+          this.context.save();
+          this._stage.render(this, this._mouseEvent);
           this._mouseEvent = null;
-          this.displayContext.drawImage(this._offCanvas, 0, 0);
+          for (const ctx of this._extraContext) {
+              ctx.drawImage(this.canvas, 0, 0);
+          }
+          this.context.restore();
       }
       clear() {
           this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-          this.displayContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      }
-  }
-
-  class Graphics {
-      constructor(target) {
-          this._needStroke = false;
-          this._rules = [];
-          this._target = target;
-      }
-      draw(ctx, evt) {
-          ctx.save();
-          ctx.translate(this._target.x, this._target.y);
-          ctx.rotate(this._target.rotation);
-          ctx.scale(this._target.scaleX, this._target.scaleY);
-          for (const rule of this._rules) {
-              rule(ctx);
+          for (const ctx of this._extraContext) {
+              ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
           }
-          if (evt && ctx.isPointInPath(evt.clientX, evt.clientY)) {
-              this._target.emit("click", evt);
-          }
-          ctx.restore();
-      }
-      clear() {
-          this._rules = [];
-          this._needStroke = false;
-      }
-      lineStyle(width, color, join, cap) {
-          this._needStroke = true;
-          this._rules.push((ctx) => {
-              ctx.lineWidth = width;
-              ctx.lineJoin = join;
-              ctx.lineCap = cap;
-              ctx.strokeStyle = color;
-          });
-      }
-      beginFill(color) {
-          this._rules.push((ctx) => {
-              ctx.fillStyle = color;
-          });
-      }
-      drawRect(x, y, w, h) {
-          this._rules.push((ctx) => {
-              ctx.beginPath();
-              ctx.rect(x, y, w, h);
-              ctx.fill();
-              this._needStroke && ctx.stroke();
-              ctx.closePath();
-          });
-      }
-      drawCircle(cx, cy, radius) {
-          this._rules.push((ctx) => {
-              ctx.beginPath();
-              ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-              ctx.fill();
-              this._needStroke && ctx.stroke();
-              ctx.closePath();
-          });
-      }
-  }
-
-  function isNum(val) {
-      return typeof val === "number";
-  }
-  function removeFromArr(arr, val) {
-      const find = arr.findIndex((o) => o === val);
-      find >= 0 && arr.splice(find, 1);
-  }
-
-  class Vec2 {
-      constructor(x = 0, y = 0) {
-          this.x = 0;
-          this.y = 0;
-          this.set(x, y);
-      }
-      set(x, y) {
-          this.x = isNum(x) ? x : this.x;
-          this.y = isNum(y) ? y : this.y;
       }
   }
 
   class EventDispatcher {
-      addEventListener(type, handler) {
-          const map = this._map || (this._map = new Map());
+      constructor() {
+          this._map = new Map();
+      }
+      on(type, handler) {
+          const map = this._map;
           if (!map.has(type)) {
               map.set(type, new Set());
           }
           map.get(type).add(handler);
       }
-      removeEventListener(type, handler) {
+      off(type, handler) {
+          var _a;
           const map = this._map;
-          if (!map || !map.has(type)) {
-              return;
-          }
-          map.get(type).delete(handler);
+          (_a = map.get(type)) === null || _a === void 0 ? void 0 : _a.delete(handler);
       }
-      removeAllEventListerner(type) {
+      offAll(type) {
+          var _a;
           const map = this._map;
-          if (!map || !map.has(type)) {
-              return;
-          }
-          type ? map.get(type).clear() : map.clear();
+          type ? (_a = map.get(type)) === null || _a === void 0 ? void 0 : _a.clear() : map.clear();
       }
       emit(type, data) {
           const map = this._map;
-          if (!map || !map.has(type)) {
+          if (!map.has(type)) {
               return;
           }
           for (const handler of map.get(type).values()) {
@@ -152,135 +77,403 @@
               });
           }
       }
+      dispose() {
+          this.offAll();
+          this._map.clear();
+      }
+  }
+
+  class Engine extends EventDispatcher {
+      constructor(target) {
+          super();
+          this._time = 0;
+          this._startAt = Date.now();
+          this._raf = 0;
+          this._target = target;
+          this._step = () => {
+              this._raf = requestAnimationFrame(this._step);
+              const current = Date.now();
+              const frameDt = 1000 / this._target.fps;
+              const elapsed = Math.min(frameDt, current - this._startAt);
+              this._startAt = Date.now();
+              this._time += elapsed;
+              while (this._time >= frameDt) {
+                  this._target.onEngine(elapsed);
+                  this._time -= frameDt;
+              }
+          };
+          this.start();
+      }
+      start() {
+          this.stop();
+          this._step();
+      }
+      stop() {
+          cancelAnimationFrame(this._raf);
+      }
+  }
+
+  function removeFromArr(arr, val) {
+      const find = arr.findIndex((o) => o === val);
+      find >= 0 && arr.splice(find, 1);
+  }
+
+  class Graphics {
+      constructor(target) {
+          this._needStroke = false;
+          this._needFill = false;
+          this._rules = [];
+          this._target = target;
+          target.on("enter-frame", (e) => {
+              e.data.context.save();
+          });
+          target.on("exit-frame", (e) => {
+              e.data.context.restore();
+          });
+      }
+      draw(render, evt) {
+          const ctx = render.context;
+          const target = this._target;
+          ctx.translate(target.x, target.y);
+          ctx.rotate(target.rotation);
+          ctx.scale(target.scaleX, target.scaleY);
+          if (target.blendMode)
+              ctx.globalCompositeOperation = target.blendMode;
+          ctx.globalAlpha = target.parent
+              ? target.parent.alpha * target.alpha
+              : target.alpha;
+          for (const rule of this._rules) {
+              const result = rule.call(this, ctx);
+              result && this.afterDraw(ctx);
+          }
+          this._needStroke = false;
+          this._needFill = false;
+      }
+      afterDraw(ctx) {
+          this._needFill && ctx.fill();
+          this._needStroke && ctx.stroke();
+      }
+      clear() {
+          this._rules = [];
+          this._needStroke = false;
+          this._needFill = false;
+      }
+      lineStyle(width, color, join, cap) {
+          this._rules.push((ctx) => {
+              this._needStroke = true;
+              ctx.lineWidth = width;
+              ctx.lineJoin = join;
+              ctx.lineCap = cap;
+              ctx.strokeStyle = color;
+          });
+      }
+      beginFill(color) {
+          this._rules.push((ctx) => {
+              this._needFill = true;
+              ctx.fillStyle = color;
+          });
+      }
+      drawRect(x, y, w, h) {
+          this._rules.push((ctx) => {
+              ctx.beginPath();
+              ctx.rect(x, y, w, h);
+              ctx.closePath();
+              return true;
+          });
+      }
+      drawImg(img, dx, dy, dw, dh, sx, sy, sw, sh) {
+          const ags = arguments;
+          this._rules = [
+              function drawImg(ctx) {
+                  ctx.drawImage.apply(ctx, ags);
+              },
+          ];
+      }
+      drawCircle(cx, cy, radius) {
+          this._rules.push(function drawCircle(ctx) {
+              ctx.beginPath();
+              ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+              ctx.closePath();
+              return true;
+          });
+      }
+      drawText(x, y, text, font) {
+          this._rules = [
+              (ctx) => {
+                  ctx.font = font;
+                  ctx.fillText(text, x, y);
+              },
+          ];
+      }
+  }
+
+  class DisplayObject extends EventDispatcher {
+      constructor() {
+          super(...arguments);
+          this.mouseEnable = false;
+          this.x = 0;
+          this.y = 0;
+          this.width = 0;
+          this.height = 0;
+          this.pivotX = 0.5;
+          this.pivotY = 0.5;
+          this.scaleX = 1;
+          this.scaleY = 1;
+          this.rotation = 0;
+          this._alpha = 1;
+      }
+      get parent() {
+          return this._parent;
+      }
+      set parent(v) {
+          this._parent = v;
+      }
+      get alpha() {
+          if (this._parent) {
+              return this.parent.alpha * this._alpha;
+          }
+          return this._alpha;
+      }
+      set alpha(value) {
+          this._alpha = value;
+      }
+      get graphics() {
+          return this._graphics || (this._graphics = new Graphics(this));
+      }
+      render(render, evt) {
+          this.emit("enter-frame", render);
+          this.graphics.draw(render, evt);
+          this.onRender(render, evt);
+          this.emit("exit-frame", render);
+      }
+      onRender(render, evt) {
+      }
+      remove() {
+          if (this.parent) {
+              this.parent.removeChild(this);
+          }
+      }
+  }
+
+  class DisplayObjectContainer extends DisplayObject {
+      constructor() {
+          super(...arguments);
+          this.children = [];
+      }
+      onRender(render, evt) {
+          for (let i = 0, len = this.children.length; i < len; i++) {
+              const child = this.children[i];
+              child.render(render, evt);
+          }
+      }
+      addChild(child) {
+          if (child.parent) {
+              child.parent.removeChild(child);
+          }
+          this.children.push(child);
+          child.parent = this;
+          child.emit("added");
+          this.calcSize();
+      }
+      removeChild(child) {
+          child.parent = null;
+          removeFromArr(this.children, child);
+          child.emit("removed");
+          this.calcSize();
+      }
+      swapChild(child1, child2) {
+          const idx1 = this.children.indexOf(child1);
+          const idx2 = this.children.indexOf(child2);
+          if (idx1 >= 0 && idx2 >= 0) {
+              this.children[idx2] = child1;
+              this.children[idx1] = child2;
+          }
+          this.calcSize();
+      }
+      calcSize() {
+          let w = 0;
+          for (let i = 0; i < this.children.length; i++) {
+              w = Math.max(w, this.children[i].width);
+          }
+          this.width = w;
+      }
+  }
+
+  class Stage extends DisplayObjectContainer {
+      constructor(canvas, w, h) {
+          super();
+          this.fps = 60;
+          this.canvas = canvas;
+          this._renderer = new Renderer(this);
+          this._engine = new Engine(this);
+          this.width = this.canvas.width;
+          this.height = this.canvas.height;
+      }
+      addCanvas(canvas) {
+          this._renderer.addContext(canvas.getContext("2d"));
+      }
+      onEngine(elapsed) {
+          this._renderer.draw();
+      }
+      calcSize() {
+          // stage.width=canvas.width
+      }
+  }
+
+  class Sprite extends DisplayObjectContainer {
+  }
+
+  class Bitmap extends DisplayObject {
+      constructor(src) {
+          super();
+          this._imgEl = new Image();
+          this.src = src;
+      }
+      get src() {
+          return this._src;
+      }
+      set src(value) {
+          this._src = value;
+          this._loaded = false;
+          this.load();
+      }
+      load() {
+          this._imgEl.src = this.src;
+          this._imgEl.onload = () => {
+              this._rawWidth = this._imgEl.naturalWidth;
+              this._rawHeight = this._imgEl.naturalHeight;
+              this.width = this.width || this._imgEl.naturalWidth;
+              this.height = this.height || this._imgEl.naturalHeight;
+              this.draw();
+              this._loaded = true;
+              this.emit("load");
+          };
+      }
+      draw() {
+          this.graphics.drawImg(this._imgEl, 0, 0, this._rawWidth, this._rawHeight, -this.width * this.pivotX, -this.height * this.pivotY, this.width, this.height);
+      }
+  }
+
+  class TextField extends DisplayObject {
+      constructor(text, font) {
+          super();
+          this.text = text;
+          this.font = font;
+      }
+      get font() {
+          return this._font;
+      }
+      set font(value) {
+          this._font = value;
+          this.graphics.drawText(0, 0, this.text, this.font);
+      }
+      get text() {
+          return this._text;
+      }
+      set text(value) {
+          this._text = value;
+          this.graphics.drawText(0, 0, this.text, this.font);
+      }
+  }
+
+  /**
+   * 动画
+   *
+   * new MovieClip(src,clips)
+   *
+   *
+   * new MovieClip(“hero.png”，[
+   *  {x:0,y:0,w:50,h:50},
+   *  {x:50,y:0,w:50,h:50},
+   *  {x:100,y:0,w:50,h:50},
+   * ])
+   */
+  class MovieClip extends Bitmap {
+      constructor(src, clips) {
+          super(src);
+          this.fps = 12;
+          this.loop = true;
+          this._currentFrame = 0;
+          this._clips = [];
+          this.src = src;
+          this._engine = new Engine(this);
+          this._clips = clips;
+      }
+      play() {
+          this._engine.start();
+      }
+      pause() {
+          this._engine.stop();
+      }
+      stop() {
+          this._currentFrame = 0;
+          this.pause();
+      }
+      onEngine(elapsed) {
+          if (!this._loaded) {
+              return;
+          }
+          this._currentFrame++;
+          if (this._currentFrame > this._clips.length - 1) {
+              if (this.loop) {
+                  this._currentFrame = 0;
+              }
+              else {
+                  this._currentFrame = this._clips.length - 1;
+                  this.pause();
+                  this.emit("complete");
+              }
+          }
+          this.draw();
+      }
+      draw() {
+          const clip = this._clips[this._currentFrame];
+          this.graphics.drawImg(this._imgEl, clip.x, clip.y, clip.w, clip.h, -this.width * this.pivotX, -this.height * this.pivotY, this.width, this.height);
+      }
+      addClip(clip) {
+          this._clips.push(clip);
+      }
+      addClipAt(clip, idx) {
+          this._clips.splice(idx, 0, clip);
+      }
+      removeClip(idx) {
+          removeFromArr(this._clips, this._clips[idx]);
+      }
+      setClips(clips) {
+          this._clips = clips;
+      }
+  }
+
+  class Rect extends Sprite {
+      constructor(w, h, fill) {
+          super();
+          this.width = w;
+          this.height = h;
+          this.graphics.beginFill(fill);
+          this.graphics.drawRect(-this.width * this.pivotX, -this.height * this.pivotY, w, h);
+      }
   }
 
   const ADD_TO_STAGE = "add-to-stage";
   const REMOVE_FROM_STAGE = "remove-from-stage";
   const ENTER_FRAME = "enter-frame";
+  const LOAD = "load";
 
   var Event = /*#__PURE__*/Object.freeze({
     __proto__: null,
     ADD_TO_STAGE: ADD_TO_STAGE,
     REMOVE_FROM_STAGE: REMOVE_FROM_STAGE,
-    ENTER_FRAME: ENTER_FRAME
+    ENTER_FRAME: ENTER_FRAME,
+    LOAD: LOAD
   });
 
-  class DisplayObject extends EventDispatcher {
-      constructor() {
-          super(...arguments);
-          this._pos = new Vec2();
-          this._size = new Vec2();
-          this._scale = new Vec2(1, 1);
-          this._rotation = 0;
-          this._children = [];
-      }
-      get scale() {
-          return this._scale;
-      }
-      get scaleX() {
-          return this._scale.x;
-      }
-      set scaleX(value) {
-          this._scale.x = value;
-      }
-      get scaleY() {
-          return this._scale.y;
-      }
-      set scaleY(value) {
-          this._scale.y = value;
-      }
-      get rotation() {
-          return this._rotation;
-      }
-      set rotation(value) {
-          this._rotation = value;
-      }
-      get x() {
-          return this._pos.x;
-      }
-      get y() {
-          return this._pos.y;
-      }
-      set x(val) {
-          this._pos.x = val;
-      }
-      set y(val) {
-          this._pos.y = val;
-      }
-      get width() {
-          return this._size.x;
-      }
-      get height() {
-          return this._size.y;
-      }
-      set width(val) {
-          this._size.x = val;
-      }
-      set height(val) {
-          this._size.y = val;
-      }
-      get graphics() {
-          return this._graphics || (this._graphics = new Graphics(this));
-      }
-      get children() {
-          return this._children;
-      }
-      get stage() {
-          return this._stage;
-      }
-      set stage(stage) {
-          if (!stage) {
-              this.emit(REMOVE_FROM_STAGE);
-          }
-          else {
-              this.emit(ADD_TO_STAGE);
-          }
-          this._stage = stage;
-      }
-      draw(render, evt) {
-          this._graphics.draw(render.context, evt);
-          for (let i = 0, len = this.children.length; i < len; i++) {
-              const child = this.children[i];
-              child.draw(render, evt);
-          }
-      }
-      addChild(child) {
-          this.children.push(child);
-      }
-      removeChild(child) {
-          removeFromArr(this.children, child);
-      }
-  }
-
-  class Stage extends DisplayObject {
-      constructor(canvas, w, h) {
-          super();
-          this.stage = this;
-          this.width = w;
-          this.height = h;
-          this.canvas = canvas;
-          this._renderer = new Renderer(this);
-          this.update();
-      }
-      update() {
-          const fn = () => {
-              this.draw();
-              this.emit(ENTER_FRAME);
-              requestAnimationFrame(fn);
-          };
-          fn();
-      }
-      draw() {
-          this._renderer.draw();
-      }
-  }
-
-  class Sprite extends DisplayObject {
-  }
-
+  exports.Bitmap = Bitmap;
   exports.Event = Event;
+  exports.MovieClip = MovieClip;
+  exports.Rect = Rect;
   exports.Sprite = Sprite;
   exports.Stage = Stage;
+  exports.TextField = TextField;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 

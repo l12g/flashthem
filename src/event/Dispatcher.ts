@@ -1,31 +1,25 @@
 import { EventHandler } from "../../type";
 
 export default class EventDispatcher {
-  private _map: Map<String, Set<EventHandler>>;
-  public addEventListener(type: string, handler: EventHandler) {
-    const map = this._map || (this._map = new Map());
+  private _map: Map<String, Set<EventHandler>> = new Map();
+  public on(type: string, handler: EventHandler) {
+    const map = this._map;
     if (!map.has(type)) {
       map.set(type, new Set());
     }
     map.get(type).add(handler);
   }
-  public removeEventListener(type: string, handler: EventHandler) {
+  public off(type: string, handler: EventHandler) {
     const map = this._map;
-    if (!map || !map.has(type)) {
-      return;
-    }
-    map.get(type).delete(handler);
+    map.get(type)?.delete(handler);
   }
-  public removeAllEventListerner(type?: string) {
+  public offAll(type?: string) {
     const map = this._map;
-    if (!map || !map.has(type)) {
-      return;
-    }
-    type ? map.get(type).clear() : map.clear();
+    type ? map.get(type)?.clear() : map.clear();
   }
   public emit(type: string, data?: any) {
     const map = this._map;
-    if (!map || !map.has(type)) {
+    if (!map.has(type)) {
       return;
     }
     for (const handler of map.get(type).values()) {
@@ -34,5 +28,9 @@ export default class EventDispatcher {
         data,
       });
     }
+  }
+  public dispose() {
+    this.offAll();
+    this._map.clear();
   }
 }

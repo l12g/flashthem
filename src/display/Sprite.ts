@@ -1,3 +1,3 @@
-import { DisplayObject } from "./DisplayObject";
+import DisplayObjectContainer from "./DisplayObjectContainer";
 
-export default class Sprite extends DisplayObject {}
+export default class Sprite extends DisplayObjectContainer {}
