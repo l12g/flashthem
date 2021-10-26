@@ -9,11 +9,9 @@ export default class Renderer {
     this._stage = stage;
     this.canvas.addEventListener("click", (e) => {
       this._mouseEvent = e;
-      // console.log(e);
     });
     this.canvas.addEventListener("mousemove", (e) => {
       this._mouseEvent = e;
-      // console.log(e);
     });
   }
   public get context() {

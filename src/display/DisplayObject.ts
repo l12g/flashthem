@@ -32,6 +32,7 @@ type BlendMode =
   | "luminosity";
 
 export abstract class DisplayObject extends EventDispatcher {
+  public name: string;
   public mouseEnable: boolean = false;
   public blendMode: BlendMode;
   public x: number = 0;
@@ -47,8 +48,7 @@ export abstract class DisplayObject extends EventDispatcher {
   public scaleY: number = 1;
 
   public rotation: number = 0;
-
-  public _alpha: number = 1;
+  public alpha: number = 1;
 
   private _parent: DisplayObjectContainer;
   public get parent() {
@@ -58,19 +58,28 @@ export abstract class DisplayObject extends EventDispatcher {
     this._parent = v;
   }
 
-  public get alpha(): number {
-    if (this._parent) {
-      return this.parent.alpha * this._alpha;
-    }
-    return this._alpha;
-  }
-  public set alpha(value: number) {
-    this._alpha = value;
-  }
-
   private _graphics: Graphics;
   public get graphics(): Graphics {
     return this._graphics || (this._graphics = new Graphics(this));
+  }
+
+  public get globalX() {
+    let x = this.x;
+    let p = this.parent;
+    while (p) {
+      x += p.x;
+      p = p.parent;
+    }
+    return x;
+  }
+  public get globalY() {
+    let y = this.y;
+    let p = this.parent;
+    while (p) {
+      y += p.y;
+      p = p.parent;
+    }
+    return y;
   }
 
   public render(render: Renderer, evt?: MouseEvent) {
@@ -79,13 +88,11 @@ export abstract class DisplayObject extends EventDispatcher {
     this.onRender(render, evt);
     this.emit("exit-frame", render);
   }
-  protected onRender(render: Renderer, evt?: MouseEvent) {
-  }
+  protected onRender(render: Renderer, evt?: MouseEvent) {}
 
   public remove() {
     if (this.parent) {
       this.parent.removeChild(this);
     }
   }
-
 }

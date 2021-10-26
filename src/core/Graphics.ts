@@ -1,16 +1,16 @@
 import { DisplayObject } from "../display/DisplayObject";
-import Sprite from "../display/Sprite";
-import { isFn, limit } from "../utils/index";
 import Renderer from "./Renderer";
 
 interface GraphicsRule {
   (ctx: CanvasRenderingContext2D): void;
 }
+type GraphicLine = [number, number, number, number];
 export default class Graphics {
   private _needStroke = false;
   private _needFill = false;
   private _rules: GraphicsRule[] = [];
   private _target: DisplayObject;
+  private _lines: GraphicLine[] = [];
   constructor(target: DisplayObject) {
     this._target = target;
     target.on("enter-frame", (e) => {
@@ -30,10 +30,18 @@ export default class Graphics {
     ctx.globalAlpha = target.parent
       ? target.parent.alpha * target.alpha
       : target.alpha;
+    if (this._lines.length) {
+      this._lines.forEach((v) => {
+        ctx.moveTo(v[0], v[1]);
+        ctx.lineTo(v[2], v[3]);
+      });
+      ctx.stroke();
+    }
     for (const rule of this._rules) {
       const result = rule.call(this, ctx);
       result && this.afterDraw(ctx);
     }
+
     this._needStroke = false;
     this._needFill = false;
   }
@@ -43,6 +51,7 @@ export default class Graphics {
   }
   public clear() {
     this._rules = [];
+    this._lines = [];
     this._needStroke = false;
     this._needFill = false;
   }
@@ -105,7 +114,21 @@ export default class Graphics {
       (ctx: CanvasRenderingContext2D) => {
         ctx.font = font;
         ctx.fillText(text, x, y);
+        return true;
       },
     ];
+  }
+  public drawLine(x0: number, y0: number, x1: number, y1: number) {
+    this._lines.push([x0, y0, x1, y1]);
+  }
+  public lineTo(x: number, y: number) {
+    this._rules.push((ctx) => {
+      ctx.lineTo(x, y);
+    });
+  }
+  public stroke() {
+    this._rules.push((ctx) => {
+      ctx.stroke();
+    });
   }
 }

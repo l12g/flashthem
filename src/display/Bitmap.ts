@@ -4,6 +4,7 @@ import Sprite from "./Sprite";
 
 export default class Bitmap extends DisplayObject {
   private _src: string;
+  public autoSize: boolean = true;
   protected _imgEl: HTMLImageElement = new Image();
   protected _rawWidth: number;
   protected _rawHeight: number;
@@ -26,11 +27,14 @@ export default class Bitmap extends DisplayObject {
     this._imgEl.onload = () => {
       this._rawWidth = this._imgEl.naturalWidth;
       this._rawHeight = this._imgEl.naturalHeight;
-      this.width = this.width || this._imgEl.naturalWidth;
-      this.height = this.height || this._imgEl.naturalHeight;
-      this.draw();
+      if (this.autoSize) {
+        this.width = this._rawWidth;
+        this.height = this._rawHeight;
+      }
       this._loaded = true;
+      this.draw();
       this.emit("load");
+      console.log("load");
     };
   }
 

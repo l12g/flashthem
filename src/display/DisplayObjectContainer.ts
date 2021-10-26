@@ -12,17 +12,25 @@ export default abstract class DisplayObjectContainer extends DisplayObject {
   }
 
   public addChild(child: DisplayObject) {
-    if (child.parent) {
-      child.parent.removeChild(child);
-    }
-    this.children.push(child);
+    this.addChildAt(child, this.children.length);
+  }
+  public addChildAt(child: DisplayObject, idx: number = 0) {
+    child.remove();
+    this.children.splice(idx, 0, child);
     child.parent = this;
     child.emit("added");
     this.calcSize();
   }
   public removeChild(child: DisplayObject) {
+    this.removeChildAt(this.children.indexOf(child));
+  }
+  public removeChildAt(idx: number) {
+    if (idx < 0 || idx > this.children.length - 1) {
+      return;
+    }
+    const child = this.children[idx];
     child.parent = null;
-    removeFromArr(this.children, child);
+    this.children.splice(idx, 1);
     child.emit("removed");
     this.calcSize();
   }

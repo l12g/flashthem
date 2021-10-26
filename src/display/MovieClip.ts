@@ -60,6 +60,12 @@ export default class MovieClip extends Bitmap implements IEngine {
   }
   protected draw() {
     const clip = this._clips[this._currentFrame];
+    if (!clip) return;
+    if (this.autoSize) {
+      this.width = clip.w;
+      this.height = clip.h;
+    }
+
     this.graphics.drawImg(
       this._imgEl,
       clip.x,
@@ -84,5 +90,6 @@ export default class MovieClip extends Bitmap implements IEngine {
   }
   public setClips(clips: ClipItem[]) {
     this._clips = clips;
+    this.draw();
   }
 }

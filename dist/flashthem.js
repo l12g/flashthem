@@ -10,11 +10,9 @@
           this._stage = stage;
           this.canvas.addEventListener("click", (e) => {
               this._mouseEvent = e;
-              // console.log(e);
           });
           this.canvas.addEventListener("mousemove", (e) => {
               this._mouseEvent = e;
-              // console.log(e);
           });
       }
       get context() {
@@ -113,16 +111,12 @@
       }
   }
 
-  function removeFromArr(arr, val) {
-      const find = arr.findIndex((o) => o === val);
-      find >= 0 && arr.splice(find, 1);
-  }
-
   class Graphics {
       constructor(target) {
           this._needStroke = false;
           this._needFill = false;
           this._rules = [];
+          this._lines = [];
           this._target = target;
           target.on("enter-frame", (e) => {
               e.data.context.save();
@@ -142,6 +136,13 @@
           ctx.globalAlpha = target.parent
               ? target.parent.alpha * target.alpha
               : target.alpha;
+          if (this._lines.length) {
+              this._lines.forEach((v) => {
+                  ctx.moveTo(v[0], v[1]);
+                  ctx.lineTo(v[2], v[3]);
+              });
+              ctx.stroke();
+          }
           for (const rule of this._rules) {
               const result = rule.call(this, ctx);
               result && this.afterDraw(ctx);
@@ -155,6 +156,7 @@
       }
       clear() {
           this._rules = [];
+          this._lines = [];
           this._needStroke = false;
           this._needFill = false;
       }
@@ -202,8 +204,22 @@
               (ctx) => {
                   ctx.font = font;
                   ctx.fillText(text, x, y);
+                  return true;
               },
           ];
+      }
+      drawLine(x0, y0, x1, y1) {
+          this._lines.push([x0, y0, x1, y1]);
+      }
+      lineTo(x, y) {
+          this._rules.push((ctx) => {
+              ctx.lineTo(x, y);
+          });
+      }
+      stroke() {
+          this._rules.push((ctx) => {
+              ctx.stroke();
+          });
       }
   }
 
@@ -220,7 +236,7 @@
           this.scaleX = 1;
           this.scaleY = 1;
           this.rotation = 0;
-          this._alpha = 1;
+          this.alpha = 1;
       }
       get parent() {
           return this._parent;
@@ -228,17 +244,26 @@
       set parent(v) {
           this._parent = v;
       }
-      get alpha() {
-          if (this._parent) {
-              return this.parent.alpha * this._alpha;
-          }
-          return this._alpha;
-      }
-      set alpha(value) {
-          this._alpha = value;
-      }
       get graphics() {
           return this._graphics || (this._graphics = new Graphics(this));
+      }
+      get globalX() {
+          let x = this.x;
+          let p = this.parent;
+          while (p) {
+              x += p.x;
+              p = p.parent;
+          }
+          return x;
+      }
+      get globalY() {
+          let y = this.y;
+          let p = this.parent;
+          while (p) {
+              y += p.y;
+              p = p.parent;
+          }
+          return y;
       }
       render(render, evt) {
           this.emit("enter-frame", render);
@@ -246,8 +271,7 @@
           this.onRender(render, evt);
           this.emit("exit-frame", render);
       }
-      onRender(render, evt) {
-      }
+      onRender(render, evt) { }
       remove() {
           if (this.parent) {
               this.parent.removeChild(this);
@@ -267,17 +291,25 @@
           }
       }
       addChild(child) {
-          if (child.parent) {
-              child.parent.removeChild(child);
-          }
-          this.children.push(child);
+          this.addChildAt(child, this.children.length);
+      }
+      addChildAt(child, idx = 0) {
+          child.remove();
+          this.children.splice(idx, 0, child);
           child.parent = this;
           child.emit("added");
           this.calcSize();
       }
       removeChild(child) {
+          this.removeChildAt(this.children.indexOf(child));
+      }
+      removeChildAt(idx) {
+          if (idx < 0 || idx > this.children.length - 1) {
+              return;
+          }
+          const child = this.children[idx];
           child.parent = null;
-          removeFromArr(this.children, child);
+          this.children.splice(idx, 1);
           child.emit("removed");
           this.calcSize();
       }
@@ -326,6 +358,7 @@
   class Bitmap extends DisplayObject {
       constructor(src) {
           super();
+          this.autoSize = true;
           this._imgEl = new Image();
           this.src = src;
       }
@@ -342,11 +375,14 @@
           this._imgEl.onload = () => {
               this._rawWidth = this._imgEl.naturalWidth;
               this._rawHeight = this._imgEl.naturalHeight;
-              this.width = this.width || this._imgEl.naturalWidth;
-              this.height = this.height || this._imgEl.naturalHeight;
-              this.draw();
+              if (this.autoSize) {
+                  this.width = this._rawWidth;
+                  this.height = this._rawHeight;
+              }
               this._loaded = true;
+              this.draw();
               this.emit("load");
+              console.log("load");
           };
       }
       draw() {
@@ -374,6 +410,11 @@
           this._text = value;
           this.graphics.drawText(0, 0, this.text, this.font);
       }
+  }
+
+  function removeFromArr(arr, val) {
+      const find = arr.findIndex((o) => o === val);
+      find >= 0 && arr.splice(find, 1);
   }
 
   /**
@@ -428,6 +469,12 @@
       }
       draw() {
           const clip = this._clips[this._currentFrame];
+          if (!clip)
+              return;
+          if (this.autoSize) {
+              this.width = clip.w;
+              this.height = clip.h;
+          }
           this.graphics.drawImg(this._imgEl, clip.x, clip.y, clip.w, clip.h, -this.width * this.pivotX, -this.height * this.pivotY, this.width, this.height);
       }
       addClip(clip) {
@@ -441,6 +488,7 @@
       }
       setClips(clips) {
           this._clips = clips;
+          this.draw();
       }
   }
 
