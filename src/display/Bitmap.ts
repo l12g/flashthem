@@ -1,5 +1,6 @@
+import Renderer from "../core/Renderer";
 import * as Event from "../event/Event";
-import { DisplayObject } from "./DisplayObject";
+import DisplayObject from "./DisplayObject";
 import Sprite from "./Sprite";
 
 export default class Bitmap extends DisplayObject {
@@ -32,13 +33,18 @@ export default class Bitmap extends DisplayObject {
         this.height = this._rawHeight;
       }
       this._loaded = true;
-      this.draw();
+      this.update();
       this.emit("load");
-      console.log("load");
     };
   }
+  public render(render: Renderer, evt?: MouseEvent) {
+    if (!this._loaded) {
+      return;
+    }
+    return super.render(render, evt);
+  }
 
-  protected draw() {
+  private update() {
     this.graphics.drawImg(
       this._imgEl,
       0,

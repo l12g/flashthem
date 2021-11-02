@@ -1,42 +1,33 @@
+import DisplayObject from "../display/DisplayObject";
 import Stage from "./Stage";
 
 export default class Renderer {
-  private _stage: Stage;
   private _mouseEvent: MouseEvent;
   private _extraContext: CanvasRenderingContext2D[] = [];
-
-  constructor(stage: Stage) {
-    this._stage = stage;
-    this.canvas.addEventListener("click", (e) => {
-      this._mouseEvent = e;
-    });
-    this.canvas.addEventListener("mousemove", (e) => {
-      this._mouseEvent = e;
-    });
+  private _canvas: HTMLCanvasElement;
+  private _target: DisplayObject;
+  constructor(canvas: HTMLCanvasElement, target: DisplayObject) {
+    this._canvas = canvas;
+    this._target = target;
   }
   public get context() {
-    return this.canvas.getContext("2d");
-  }
-  public get canvas() {
-    return this._stage.canvas;
+    return this._canvas.getContext("2d");
   }
   public addContext(ctx) {
     this._extraContext.push(ctx);
   }
-  public draw() {
+  public draw(target?: DisplayObject) {
     this.clear();
-    this.context.save();
-    this._stage.render(this, this._mouseEvent);
+    this._target.render(this, this._mouseEvent);
     this._mouseEvent = null;
     for (const ctx of this._extraContext) {
-      ctx.drawImage(this.canvas, 0, 0);
+      ctx.drawImage(this._canvas, 0, 0);
     }
-    this.context.restore();
   }
   public clear() {
-    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.context.clearRect(0, 0, this._canvas.width, this._canvas.height);
     for (const ctx of this._extraContext) {
-      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     }
   }
 }

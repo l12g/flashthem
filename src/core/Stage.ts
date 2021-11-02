@@ -9,7 +9,7 @@ export default class Stage extends DisplayObjectContainer implements IEngine {
   constructor(canvas: HTMLCanvasElement, w?: number, h?: number) {
     super();
     this.canvas = canvas;
-    this._renderer = new Renderer(this);
+    this._renderer = new Renderer(canvas, this);
     this._engine = new Engine(this);
     this.width = this.canvas.width;
     this.height = this.canvas.height;
@@ -22,5 +22,8 @@ export default class Stage extends DisplayObjectContainer implements IEngine {
   }
   public calcSize() {
     // stage.width=canvas.width
+  }
+  public flush() {
+    this._renderer.draw(this);
   }
 }

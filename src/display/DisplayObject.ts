@@ -31,9 +31,12 @@ type BlendMode =
   | "color"
   | "luminosity";
 
-export abstract class DisplayObject extends EventDispatcher {
+type AABB = [number, number, number, number];
+type Vertex = [number, number];
+export default abstract class DisplayObject extends EventDispatcher {
   public name: string;
   public mouseEnable: boolean = false;
+  public visible: boolean = true;
   public blendMode: BlendMode;
   public x: number = 0;
   public y: number = 0;
@@ -63,6 +66,10 @@ export abstract class DisplayObject extends EventDispatcher {
     return this._graphics || (this._graphics = new Graphics(this));
   }
 
+  constructor() {
+    super();
+  }
+
   public get globalX() {
     let x = this.x;
     let p = this.parent;
@@ -81,18 +88,73 @@ export abstract class DisplayObject extends EventDispatcher {
     }
     return y;
   }
+  public get globalRotation() {
+    let r = this.rotation;
+    let p = this.parent;
+    while (p) {
+      r += p.rotation;
+      p = p.parent;
+    }
+    return r;
+  }
 
   public render(render: Renderer, evt?: MouseEvent) {
+    if (!this.visible) {
+      return;
+    }
     this.emit("enter-frame", render);
     this.graphics.draw(render, evt);
     this.onRender(render, evt);
     this.emit("exit-frame", render);
   }
-  protected onRender(render: Renderer, evt?: MouseEvent) {}
 
   public remove() {
     if (this.parent) {
       this.parent.removeChild(this);
     }
+  }
+  protected onRender(render: Renderer, evt?: MouseEvent) {}
+  public hitTest(target: DisplayObject) {
+    const aabb1 = this.aabb();
+    const aabb2 = target.aabb();
+    const x = Math.abs(aabb1[0] - aabb2[0]) < aabb1[2];
+    const y = Math.abs(aabb1[1] - aabb2[1]) < aabb1[3];
+    // console.log(aabb1[0] - aabb2[0], aabb1[2]);
+    return x && y;
+  }
+  public aabb(): AABB {
+    const [p1, p2, p3, p4] = this.vertex();
+    const minx = Math.min(p1[0], p2[0], p3[0], p4[0]);
+    const miny = Math.min(p1[1], p2[1], p3[1], p4[1]);
+    const maxx = Math.max(p1[0], p2[0], p3[0], p4[0]);
+    const maxy = Math.max(p1[1], p2[1], p3[1], p4[1]);
+    return [minx, miny, Math.abs(maxx - minx), Math.abs(maxy - miny)];
+  }
+
+  public vertex(): Vertex[] {
+    const gr = (Math.PI / 180) * this.globalRotation;
+    const hw = this.width / 2;
+    const hh = this.height / 2;
+    const a = Math.cos(gr);
+    const b = Math.sin(gr);
+    const c = -Math.sin(gr);
+    const d = Math.cos(gr);
+    const p1: Vertex = [
+      a * hw + c * hh + this.globalX,
+      b * hw + d * hh + this.globalY,
+    ];
+    const p2: Vertex = [
+      -a * hw + c * hh + this.globalX,
+      -b * hw + d * hh + this.globalY,
+    ];
+    const p3: Vertex = [
+      -a * hw - c * hh + this.globalX,
+      -b * hw - d * hh + this.globalY,
+    ];
+    const p4: Vertex = [
+      a * hw - c * hh + this.globalX,
+      b * hw - d * hh + this.globalY,
+    ];
+    return [p1, p2, p3, p4];
   }
 }

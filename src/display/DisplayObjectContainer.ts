@@ -1,13 +1,12 @@
 import Renderer from "../core/Renderer";
 import { removeFromArr } from "../utils/index";
-import { DisplayObject } from "./DisplayObject";
+import DisplayObject from "./DisplayObject";
 
 export default abstract class DisplayObjectContainer extends DisplayObject {
   public readonly children: DisplayObject[] = [];
   public onRender(render: Renderer, evt?: MouseEvent) {
     for (let i = 0, len = this.children.length; i < len; i++) {
-      const child = this.children[i];
-      child.render(render, evt);
+      this.children[i].render(render, evt);
     }
   }
 

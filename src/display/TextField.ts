@@ -1,5 +1,5 @@
 import Renderer from "../core/Renderer";
-import { DisplayObject } from "./DisplayObject";
+import DisplayObject from "./DisplayObject";
 import Sprite from "./Sprite";
 
 export default class TextField extends DisplayObject {

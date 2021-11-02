@@ -34,3 +34,16 @@ export function limit(val: number, min: number, max: number) {
   }
   return Math.max(min, Math.min(max, val));
 }
+
+export function def<T>(target: T, key: string, v: any) {
+  Object.defineProperty(target, key, {
+    get() {
+      return v;
+    },
+    set(val) {
+      v = val;
+      return v;
+    },
+  });
+  return target;
+}

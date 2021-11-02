@@ -1,4 +1,4 @@
-import { DisplayObject } from "../display/DisplayObject";
+import DisplayObject from "../display/DisplayObject";
 import Renderer from "./Renderer";
 
 interface GraphicsRule {
@@ -20,13 +20,18 @@ export default class Graphics {
       (e.data as Renderer).context.restore();
     });
   }
+  private afterDraw(ctx: CanvasRenderingContext2D) {
+    this._needFill && ctx.fill();
+    this._needStroke && ctx.stroke();
+  }
   public draw(render: Renderer, evt?: MouseEvent) {
     const ctx = render.context;
     const target = this._target;
     ctx.translate(target.x, target.y);
-    ctx.rotate(target.rotation);
+    ctx.rotate((target.rotation / 180) * Math.PI);
     ctx.scale(target.scaleX, target.scaleY);
-    if (target.blendMode) ctx.globalCompositeOperation = target.blendMode;
+    ctx.globalCompositeOperation =
+      target.blendMode || ctx.globalCompositeOperation;
     ctx.globalAlpha = target.parent
       ? target.parent.alpha * target.alpha
       : target.alpha;
@@ -45,10 +50,7 @@ export default class Graphics {
     this._needStroke = false;
     this._needFill = false;
   }
-  public afterDraw(ctx: CanvasRenderingContext2D) {
-    this._needFill && ctx.fill();
-    this._needStroke && ctx.stroke();
-  }
+
   public clear() {
     this._rules = [];
     this._lines = [];
