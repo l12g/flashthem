@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="fps"></div>
+    <div id="ms"></div>
+    <canvas
+      width="550"
+      height="400"
+      id="canvas"
+      style="background-color: #000; margin: 50px"
+    ></canvas>
+    <canvas
+      width="550"
+      height="400"
+      id="canvas2"
+      style="background-color: #ddd; margin: 50px"
+    ></canvas>
+    <script src="./flashthem.js"></script>
+    <script>
+      const { Stage, Sprite, Event, Bitmap, TextField, MovieClip, Rect } =
+        flashthem;
+      let fps = 0;
+      let t0 = Date.now();
+      const stage = new Stage("#canvas");
+      const points = [];
+      const line = new Sprite();
+      line.addFilter(new flashthem.BlurFilter(2));
+      stage.addChild(line);
+      stage.on("enter-frame", (e) => {
+        points.push({ x: stage.mouseX, y: stage.mouseY });
+        if (points.length > 10) {
+          points.shift();
+        }
+        line.graphics.clear();
+        for (let i = 0; i < points.length - 2; i++) {
+          line.graphics.lineStyle(i + 1, "#fff", "bevel", "round");
+          line.graphics.moveTo(points[i].x, points[i].y);
+          line.graphics.lineTo(points[i + 1].x, points[i + 1].y);
+        }
+      });
+
+      // line.graphics.lineStyle(1, "red", "round", "round");
+      // line.graphics.moveTo(0, 0);
+      // line.graphics.lineTo(100, 100);
+
+      // line.graphics.lineStyle(20, "red", "round", "round");
+      // line.graphics.moveTo(100, 100);
+      // line.graphics.lineTo(200, 200);
+    </script>
+  </body>
+</html>
