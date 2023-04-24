@@ -1,13 +1,10 @@
-import EventDispatcher from "../event/Dispatcher";
-
-export default class Engine extends EventDispatcher {
+export default class Engine {
   private _time = 0;
   private _startAt = Date.now();
   private _target: IEngine;
   private _step: () => void;
   private _raf: number = 0;
   constructor(target: IEngine) {
-    super();
     this._target = target;
     this._step = () => {
       this._raf = requestAnimationFrame(this._step);

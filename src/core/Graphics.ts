@@ -1,50 +1,63 @@
 import DisplayObject from "../display/DisplayObject";
 import Renderer from "./Renderer";
 
-interface GraphicsRule {
+interface GraphicsCommand {
   (ctx: CanvasRenderingContext2D): void;
 }
-type GraphicLine = [number, number, number, number];
 export default class Graphics {
+  static DEG_TO_RAD = Math.PI / 180;
   private _needStroke = false;
   private _needFill = false;
-  private _rules: GraphicsRule[] = [];
+  private _commands: GraphicsCommand[] = [];
   private _target: DisplayObject;
-  private _lines: GraphicLine[] = [];
+  public get commands() {
+    return this._commands;
+  }
   constructor(target: DisplayObject) {
     this._target = target;
-    target.on("enter-frame", (e) => {
-      (e.data as Renderer).context.save();
-    });
-    target.on("exit-frame", (e) => {
-      (e.data as Renderer).context.restore();
-    });
   }
   private afterDraw(ctx: CanvasRenderingContext2D) {
     this._needFill && ctx.fill();
     this._needStroke && ctx.stroke();
   }
-  public draw(render: Renderer, evt?: MouseEvent) {
-    const ctx = render.context;
+  public draw(ctx: CanvasRenderingContext2D, evt?: MouseEvent) {
     const target = this._target;
-    ctx.translate(target.x, target.y);
-    ctx.rotate((target.rotation / 180) * Math.PI);
-    ctx.scale(target.scaleX, target.scaleY);
-    ctx.globalCompositeOperation =
-      target.blendMode || ctx.globalCompositeOperation;
-    ctx.globalAlpha = target.parent
-      ? target.parent.alpha * target.alpha
-      : target.alpha;
-    if (this._lines.length) {
-      this._lines.forEach((v) => {
-        ctx.moveTo(v[0], v[1]);
-        ctx.lineTo(v[2], v[3]);
+    const mtx = target.matrix;
+
+    ctx.transform(
+      mtx.a,
+      mtx.b,
+      mtx.c,
+      mtx.d,
+      Math.floor(mtx.tx),
+      Math.floor(mtx.ty)
+    );
+    if (target.useBitmapCache) {
+      target.bitmapCache.draw(ctx);
+    } else {
+      ctx.globalCompositeOperation =
+        target.blendMode || ctx.globalCompositeOperation;
+      ctx.globalAlpha = target.parent
+        ? target.parent.alpha * target.alpha
+        : target.alpha;
+
+      target.filters.forEach((f) => {
+        ctx.filter = f.toString();
       });
-      ctx.stroke();
+      for (const cmd of this._commands) {
+        const result = cmd.call(this, ctx);
+        result && this.afterDraw(ctx);
+      }
     }
-    for (const rule of this._rules) {
-      const result = rule.call(this, ctx);
-      result && this.afterDraw(ctx);
+
+    if (evt && target.mouseEnable) {
+      const { offsetX, offsetY } = evt;
+      if (
+        ctx.isPointInPath(offsetX, offsetY) ||
+        ctx.isPointInStroke(offsetX, offsetY)
+      ) {
+        target.emit(evt.type);
+      }
     }
 
     this._needStroke = false;
@@ -52,18 +65,20 @@ export default class Graphics {
   }
 
   public clear() {
-    this._rules = [];
-    this._lines = [];
+    this._commands = [];
     this._needStroke = false;
     this._needFill = false;
   }
+  // private addCommand(){
+  //   this._commands.push(fn);
+  // }
   public lineStyle(
     width?: number,
     color?: string | CanvasGradient | CanvasPattern,
     join?: CanvasLineJoin,
     cap?: CanvasLineCap
   ) {
-    this._rules.push((ctx) => {
+    this._commands.push(function (ctx) {
       this._needStroke = true;
       ctx.lineWidth = width;
       ctx.lineJoin = join;
@@ -72,39 +87,22 @@ export default class Graphics {
     });
   }
   public beginFill(color: string | CanvasGradient | CanvasPattern) {
-    this._rules.push((ctx) => {
+    this._commands.push(function (ctx) {
       this._needFill = true;
       ctx.fillStyle = color;
     });
   }
   public drawRect(x: number, y: number, w: number, h: number) {
-    this._rules.push((ctx) => {
+    this._commands.push(function (ctx) {
       ctx.beginPath();
       ctx.rect(x, y, w, h);
       ctx.closePath();
       return true;
     });
   }
-  public drawImg(
-    img: CanvasImageSource,
-    dx,
-    dy,
-    dw,
-    dh,
-    sx?: number,
-    sy?: number,
-    sw?: number,
-    sh?: number
-  ) {
-    const ags = arguments;
-    this._rules = [
-      function drawImg(ctx) {
-        ctx.drawImage.apply(ctx, ags);
-      },
-    ];
-  }
   public drawCircle(cx: number, cy: number, radius: number) {
-    this._rules.push(function drawCircle(ctx) {
+    this._target.width = this._target.height = radius * 2;
+    this._commands.push(function drawCircle(ctx) {
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.closePath();
@@ -112,7 +110,7 @@ export default class Graphics {
     });
   }
   public drawText(x: number, y: number, text: string, font: string) {
-    this._rules = [
+    this._commands = [
       (ctx: CanvasRenderingContext2D) => {
         ctx.font = font;
         ctx.fillText(text, x, y);
@@ -120,17 +118,42 @@ export default class Graphics {
       },
     ];
   }
-  public drawLine(x0: number, y0: number, x1: number, y1: number) {
-    this._lines.push([x0, y0, x1, y1]);
-  }
+
   public lineTo(x: number, y: number) {
-    this._rules.push((ctx) => {
+    this._commands.push(function (ctx) {
       ctx.lineTo(x, y);
+      return true;
+    });
+  }
+  public moveTo(x: number, y: number) {
+    this._commands.push(function (ctx) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    });
+  }
+  public quadraticCurveTo(cpx: number, cpy: number, x: number, y: number) {
+    this._commands.push(function (ctx) {
+      ctx.quadraticCurveTo(cpx, cpy, x, y);
     });
   }
   public stroke() {
-    this._rules.push((ctx) => {
+    this._commands.push(function (ctx) {
       ctx.stroke();
+    });
+  }
+  public drawImage(
+    source,
+    sx: number,
+    sy: number,
+    sw: number,
+    sh: number,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number
+  ) {
+    this._commands.push(function (ctx) {
+      ctx.drawImage(source, sx, sy, sw, sh, dx, dy, dw, dh);
     });
   }
 }

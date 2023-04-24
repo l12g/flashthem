@@ -1,11 +1,13 @@
+/**
+ * 位图
+ * new Bitmap(src)
+ * new Bitmap("role.png")
+ */
 import Renderer from "../core/Renderer";
-import * as Event from "../event/Event";
 import DisplayObject from "./DisplayObject";
-import Sprite from "./Sprite";
 
 export default class Bitmap extends DisplayObject {
   private _src: string;
-  public autoSize: boolean = true;
   protected _imgEl: HTMLImageElement = new Image();
   protected _rawWidth: number;
   protected _rawHeight: number;
@@ -28,24 +30,22 @@ export default class Bitmap extends DisplayObject {
     this._imgEl.onload = () => {
       this._rawWidth = this._imgEl.naturalWidth;
       this._rawHeight = this._imgEl.naturalHeight;
-      if (this.autoSize) {
+      if (this.width === 0) {
         this.width = this._rawWidth;
+      }
+      if (this.height === 0) {
         this.height = this._rawHeight;
       }
       this._loaded = true;
-      this.update();
       this.emit("load");
     };
   }
-  public render(render: Renderer, evt?: MouseEvent) {
-    if (!this._loaded) {
-      return;
-    }
-    return super.render(render, evt);
+  public render(renderer: Renderer, evt: MouseEvent, elapsed: number) {
+    if (!this._loaded) return;
+    super.render(renderer, evt, elapsed);
   }
-
-  private update() {
-    this.graphics.drawImg(
+  public onRender(renderer: Renderer, evt?: MouseEvent) {
+    renderer.context.drawImage(
       this._imgEl,
       0,
       0,

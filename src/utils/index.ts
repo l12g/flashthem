@@ -47,3 +47,7 @@ export function def<T>(target: T, key: string, v: any) {
   });
   return target;
 }
+
+export function getType(obj: Object) {
+  return Object.prototype.toString.call(obj);
+}

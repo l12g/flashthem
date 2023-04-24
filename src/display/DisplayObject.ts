@@ -1,7 +1,13 @@
+import { Stage } from "..";
 import Graphics from "../core/Graphics";
 import Renderer from "../core/Renderer";
+import Vec2 from "../gemo/Vec2";
 import EventDispatcher from "../event/Dispatcher";
+import Matrix2D from "../gemo/Matrix2D";
 import DisplayObjectContainer from "./DisplayObjectContainer";
+import { getType } from "../utils";
+import BitmapCache from "./BitmapCache";
+import Filter from "../filters/Filter";
 
 type BlendMode =
   | "source-over"
@@ -31,43 +37,144 @@ type BlendMode =
   | "color"
   | "luminosity";
 
-type AABB = [number, number, number, number];
-type Vertex = [number, number];
+type AABB = { x: number; y: number; w: number; h: number };
 export default abstract class DisplayObject extends EventDispatcher {
-  public name: string;
-  public mouseEnable: boolean = false;
-  public visible: boolean = true;
-  public blendMode: BlendMode;
-  public x: number = 0;
-  public y: number = 0;
+  private _mtx: Matrix2D;
+  private _bitmapCache: BitmapCache;
+  private _filters = [];
+  public get filters() {
+    return this._filters;
+  }
+  public get bitmapCache(): BitmapCache {
+    return this._bitmapCache;
+  }
+  public set bitmapCache(value: BitmapCache) {
+    this._bitmapCache = value;
+  }
+  private _useBitmapCache: boolean;
+  public get useBitmapCache(): boolean {
+    return this._useBitmapCache;
+  }
+  public set useBitmapCache(value: boolean) {
+    if (value) {
+      this._bitmapCache = this._bitmapCache || new BitmapCache(this);
+    }
+    this._useBitmapCache = value;
+  }
+  private _x: number = 0;
+  public get x(): number {
+    return this._x;
+  }
+  public set x(value: number) {
+    this._x = value;
+  }
+  private _y: number = 0;
+  public get y(): number {
+    return this._y;
+  }
+  public set y(value: number) {
+    this._y = value;
+  }
+  private _scaleX: number = 1;
+  public get scaleX(): number {
+    return this._scaleX;
+  }
+  public set scaleX(value: number) {
+    this._scaleX = value;
+  }
+  private _scaleY: number = 1;
+  public get scaleY(): number {
+    return this._scaleY;
+  }
+  public set scaleY(value: number) {
+    this.updateBitmapCache();
+    this._scaleY = value;
+  }
+  private _width: number = 0;
+  public get width(): number {
+    return this._width;
+  }
+  public set width(value: number) {
+    this._width = value;
+  }
+  private _height: number = 0;
+  public get height(): number {
+    return this._height;
+  }
+  public set height(value: number) {
+    this._height = value;
+  }
+  private _rotation: number = 0;
+  public get rotation(): number {
+    return this._rotation;
+  }
+  public set rotation(value: number) {
+    this._rotation = value;
+  }
+  private _pivotX: number = 0;
+  public get pivotX(): number {
+    return this._pivotX;
+  }
+  public set pivotX(value: number) {
+    this._pivotX = value;
+  }
+  private _pivotY: number = 0;
+  public get pivotY(): number {
+    return this._pivotY;
+  }
+  public set pivotY(value: number) {
+    this._pivotY = value;
+  }
 
-  public width: number = 0;
-  public height: number = 0;
+  private _skewX: number = 0;
+  public get skewX(): number {
+    return this._skewX;
+  }
+  public set skewX(value: number) {
+    this._skewX = value;
+  }
+  private _skewY: number = 0;
+  public get skewY(): number {
+    return this._skewY;
+  }
+  public set skewY(value: number) {
+    this._skewY = value;
+  }
 
-  public pivotX: number = 0.5;
-  public pivotY: number = 0.5;
-
-  public scaleX: number = 1;
-  public scaleY: number = 1;
-
-  public rotation: number = 0;
-  public alpha: number = 1;
-
-  private _parent: DisplayObjectContainer;
+  public snapToPixel: boolean = true;
+  public _parent?: DisplayObjectContainer;
   public get parent() {
     return this._parent;
   }
   public set parent(v: DisplayObjectContainer) {
+    if (v && v.constructor === DisplayObjectContainer) {
+      throw new Error(
+        `parent must be instance of DisplayObjectContainer,got ${getType(v)}`
+      );
+    }
     this._parent = v;
   }
 
-  private _graphics: Graphics;
-  public get graphics(): Graphics {
-    return this._graphics || (this._graphics = new Graphics(this));
+  public name: string;
+  public mouseEnable: boolean = false;
+  public visible: boolean = true;
+  public blendMode: BlendMode;
+  private _alpha: number = 1;
+  public get alpha(): number {
+    return this._alpha;
   }
+  public set alpha(value: number) {
+    const eq = value === this._alpha;
+    this._alpha = value;
+    if (!eq) {
+      this.updateBitmapCache();
+    }
+  }
+  public readonly graphics: Graphics;
 
   constructor() {
     super();
+    this.graphics = new Graphics(this);
   }
 
   public get globalX() {
@@ -97,64 +204,151 @@ export default abstract class DisplayObject extends EventDispatcher {
     }
     return r;
   }
+  public get stage(): Stage | null {
+    let p = this.parent;
+    while (p) {
+      if (p.constructor === Stage) {
+        return p;
+      }
+      p = p.parent;
+    }
+    return null;
+  }
 
-  public render(render: Renderer, evt?: MouseEvent) {
+  private drawCache() {}
+
+  public render(render: Renderer, evt: MouseEvent, elapsed: number) {
     if (!this.visible) {
       return;
     }
     this.emit("enter-frame", render);
-    this.graphics.draw(render, evt);
-    this.onRender(render, evt);
+    render.context.save();
+    if (this.useBitmapCache) {
+      this.drawCache();
+    }
+    this.graphics.draw(render.context, evt);
+    this.onRender(render, evt, elapsed);
+    render.context.restore();
     this.emit("exit-frame", render);
   }
 
   public remove() {
-    if (this.parent) {
-      this.parent.removeChild(this);
-    }
+    this.parent && this.parent.removeChild(this);
+    return this;
   }
-  protected onRender(render: Renderer, evt?: MouseEvent) {}
-  public hitTest(target: DisplayObject) {
-    const aabb1 = this.aabb();
-    const aabb2 = target.aabb();
-    const x = Math.abs(aabb1[0] - aabb2[0]) < aabb1[2];
-    const y = Math.abs(aabb1[1] - aabb2[1]) < aabb1[3];
-    // console.log(aabb1[0] - aabb2[0], aabb1[2]);
+  protected onRender(render: Renderer, evt: MouseEvent, elapsed: number) {}
+
+  /**
+   * 矩形碰撞检测
+   * @param target
+   * @returns
+   */
+  public hitTestObject(target: DisplayObject): boolean {
+    const bound1 = this.aabb;
+    const bound2 = target.aabb;
+    const axs1 = bound1.x;
+    const axs2 = bound1.x + bound1.w;
+
+    const bxs1 = bound2.x;
+    const bxs2 = bound2.x + bound2.w;
+
+    const ays1 = bound1.y;
+    const ays2 = bound1.y + bound1.h;
+
+    const bys1 = bound2.y;
+    const bys2 = bound2.y + bound2.h;
+
+    const x =
+      Math.max(axs1, axs2, bxs1, bxs2) - Math.min(axs1, axs2, bxs1, bxs2) <
+      bound1.w + bound2.w;
+
+    const y =
+      Math.max(ays1, ays2, bys1, bys2) - Math.min(ays1, ays2, bys1, bys2) <
+      bound1.h + bound2.h;
+
     return x && y;
   }
-  public aabb(): AABB {
-    const [p1, p2, p3, p4] = this.vertex();
-    const minx = Math.min(p1[0], p2[0], p3[0], p4[0]);
-    const miny = Math.min(p1[1], p2[1], p3[1], p4[1]);
-    const maxx = Math.max(p1[0], p2[0], p3[0], p4[0]);
-    const maxy = Math.max(p1[1], p2[1], p3[1], p4[1]);
-    return [minx, miny, Math.abs(maxx - minx), Math.abs(maxy - miny)];
+
+  /**
+   *
+   * @param number x x坐标
+   * @param number y y坐标
+   * @returns
+   */
+  public hitTestPoint(x: number, y: number) {
+    const aabb = this.aabb;
+    return (
+      x > aabb.x && x < aabb.x + aabb.w && y > aabb.y && y < aabb.y + aabb.h
+    );
   }
 
-  public vertex(): Vertex[] {
-    const gr = (Math.PI / 180) * this.globalRotation;
-    const hw = this.width / 2;
-    const hh = this.height / 2;
-    const a = Math.cos(gr);
-    const b = Math.sin(gr);
-    const c = -Math.sin(gr);
-    const d = Math.cos(gr);
-    const p1: Vertex = [
-      a * hw + c * hh + this.globalX,
-      b * hw + d * hh + this.globalY,
-    ];
-    const p2: Vertex = [
-      -a * hw + c * hh + this.globalX,
-      -b * hw + d * hh + this.globalY,
-    ];
-    const p3: Vertex = [
-      -a * hw - c * hh + this.globalX,
-      -b * hw - d * hh + this.globalY,
-    ];
-    const p4: Vertex = [
-      a * hw - c * hh + this.globalX,
-      b * hw - d * hh + this.globalY,
-    ];
-    return [p1, p2, p3, p4];
+  public get matrix(): Matrix2D {
+    this._mtx = this._mtx || new Matrix2D();
+    this._mtx
+      .identity()
+      .appendTransform(
+        this.x,
+        this.y,
+        this.scaleX,
+        this.scaleY,
+        this.rotation,
+        this.skewX,
+        this.skewY,
+        this.pivotX,
+        this.pivotY
+      );
+    return this._mtx;
+  }
+
+  /**
+   *
+   * @returns
+   */
+  public get aabb(): AABB {
+    const [p1, p2, p3, p4] = this.vertex;
+    const minx = Math.min(p1.x, p2.x, p3.x, p4.x);
+    const miny = Math.min(p1.y, p2.y, p3.y, p4.y);
+    const maxx = Math.max(p1.x, p2.x, p3.x, p4.x);
+    const maxy = Math.max(p1.y, p2.y, p3.y, p4.y);
+    return {
+      x: minx,
+      y: miny,
+      w: Math.abs(maxx - minx),
+      h: Math.abs(maxy - miny),
+    };
+  }
+
+  public get vertex(): Vec2[] {
+    const rad = (this.rotation / 180) * Math.PI;
+    const sin = Math.sin(rad);
+    const cos = Math.cos(rad);
+    const a = cos;
+    const b = sin;
+    const c = -sin;
+    const d = cos;
+    const mtx = new Matrix2D(a, b, c, d, 0, 0);
+
+    const hw = this.width;
+    const hh = this.height;
+
+    // top-left
+    const p1 = new Vec2();
+    // top-right
+    const p2 = new Vec2(a * hw, b * hw);
+    // bottom-right
+    const p3 = new Vec2(a * hw + c * hh, b * hw + d * hh);
+    // bottom-left
+    const p4 = new Vec2(c * hh, d * hh);
+    return [p1, p2, p3, p4].map((v) => {
+      return v.addxy(this.globalX, this.globalY);
+    });
+  }
+
+  public addFilter(filter: Filter) {
+    this._filters.push(filter);
+  }
+
+  private updateBitmapCache() {
+    this._useBitmapCache && this._bitmapCache.reset();
   }
 }

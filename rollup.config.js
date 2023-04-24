@@ -1,5 +1,6 @@
-import ts from "rollup-plugin-typescript2";
 import terser from "rollup-plugin-terser-js";
+import ts from '@rollup/plugin-typescript';
+
 export default {
   input: "src/index.ts",
   output: {

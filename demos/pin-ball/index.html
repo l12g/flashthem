@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>弹球</title>
+    <link rel="stylesheet" href="../demo.css" />
+    <style>
+      .box {
+        display: inline-block;
+        width: 100px;
+        height: 50px;
+        position: fixed;
+        left: 0;
+        top: 0;
+        background-color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box"></div>
+    <div class="wrap">
+      <canvas
+        class="stage"
+        width="550"
+        height="400"
+        id="canvas"
+        style="background-color: #000"
+      ></canvas>
+
+      <canvas
+        class="stage"
+        width="550"
+        height="400"
+        id="canvas2"
+        style="background-color: #ddd; "
+      ></canvas>
+    </div>
+    <script src="../../dist/flashthem.js"></script>
+    <script src="./index.js"></script>
+
+    <script>
+      // const ctx = document.getElementById("canvas2").getContext("2d");
+      // ctx.scale(2, 2);
+      // ctx.strokeStyle = "#000";
+      // ctx.lineWidth = 1;
+      // ctx.strokeRect(10, 10, 100, 100);
+    </script>
+  </body>
+</html>

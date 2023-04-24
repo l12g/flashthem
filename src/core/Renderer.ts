@@ -2,13 +2,10 @@ import DisplayObject from "../display/DisplayObject";
 import Stage from "./Stage";
 
 export default class Renderer {
-  private _mouseEvent: MouseEvent;
   private _extraContext: CanvasRenderingContext2D[] = [];
   private _canvas: HTMLCanvasElement;
-  private _target: DisplayObject;
-  constructor(canvas: HTMLCanvasElement, target: DisplayObject) {
+  constructor(canvas: HTMLCanvasElement) {
     this._canvas = canvas;
-    this._target = target;
   }
   public get context() {
     return this._canvas.getContext("2d");
@@ -16,13 +13,15 @@ export default class Renderer {
   public addContext(ctx) {
     this._extraContext.push(ctx);
   }
-  public draw(target?: DisplayObject) {
+  public render(target: DisplayObject, evt: MouseEvent, elapsed: number) {
     this.clear();
-    this._target.render(this, this._mouseEvent);
-    this._mouseEvent = null;
+    this.context.save();
+    this.context.scale(Stage.DPR, Stage.DPR);
+    target.render(this, evt, elapsed);
     for (const ctx of this._extraContext) {
       ctx.drawImage(this._canvas, 0, 0);
     }
+    this.context.restore();
   }
   public clear() {
     this.context.clearRect(0, 0, this._canvas.width, this._canvas.height);

@@ -7,11 +7,6 @@ export default class Rect extends Sprite {
 
     this.height = h;
     this.graphics.beginFill(fill);
-    this.graphics.drawRect(
-      -this.width * this.pivotX,
-      -this.height * this.pivotY,
-      w,
-      h
-    );
+    this.graphics.drawRect(0, 0, w, h);
   }
 }

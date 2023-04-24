@@ -1,0 +1,23 @@
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+.wrap {
+  height: 100%;
+  text-align: center;
+  background-color: #ccc;
+}
+.stage {
+  display: inline-block;
+  vertical-align: middle;
+  background-color: #fff;
+}
+.wrap::after {
+  height: 100%;
+  display: inline-block;
+  content: "";
+  width: 0;
+  vertical-align: middle;
+}

@@ -11,6 +11,7 @@
  * ])
  */
 import Engine, { IEngine } from "../core/Engine";
+import Renderer from "../core/Renderer";
 import { removeFromArr } from "../utils/index";
 import Bitmap from "./Bitmap";
 type ClipItem = {
@@ -26,6 +27,7 @@ export default class MovieClip extends Bitmap implements IEngine {
   private _currentFrame: number = 0;
   private _engine: Engine;
   private _clips: ClipItem[] = [];
+  public autoSize: boolean = true;
   public play() {
     this._engine.start();
   }
@@ -35,6 +37,14 @@ export default class MovieClip extends Bitmap implements IEngine {
   public stop() {
     this._currentFrame = 0;
     this.pause();
+  }
+  public gotoAndStop(frame: number) {
+    this._currentFrame = frame;
+    this.pause();
+  }
+  public gotoAndPlay(frame: number) {
+    this._currentFrame = frame;
+    this.play();
   }
   constructor(src: string, clips: ClipItem[]) {
     super(src);
@@ -56,17 +66,18 @@ export default class MovieClip extends Bitmap implements IEngine {
         this.emit("complete");
       }
     }
-    this.draw();
   }
-  protected draw() {
+
+  public onRender(renderer: Renderer, evt?: MouseEvent) {
     const clip = this._clips[this._currentFrame];
     if (!clip) return;
+
     if (this.autoSize) {
       this.width = clip.w;
       this.height = clip.h;
     }
 
-    this.graphics.drawImg(
+    renderer.context.drawImage(
       this._imgEl,
       clip.x,
       clip.y,
@@ -90,6 +101,5 @@ export default class MovieClip extends Bitmap implements IEngine {
   }
   public setClips(clips: ClipItem[]) {
     this._clips = clips;
-    this.draw();
   }
 }
