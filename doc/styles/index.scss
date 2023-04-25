@@ -1,0 +1,59 @@
+*,
+*::after,
+*::before {
+  box-sizing: border-box;
+}
+html {
+  background-color: #efefef;
+  min-height: 100%;
+  font-size: 14px;
+  color: #333;
+}
+body {
+  margin: 0 auto;
+  min-height: 100%;
+  position: relative;
+  text-align: center;
+}
+
+nav {
+  width: 140px;
+  padding: 12px 0;
+  vertical-align: top;
+  position: sticky;
+  display: inline-block;
+  top: 0;
+  text-align: left;
+}
+.menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: #666;
+  li {
+    padding: 4px;
+    transition: all 0.3s;
+    &:hover {
+      color: #333;
+    }
+    a {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+  }
+}
+
+.app {
+  &-root {
+    display: inline-block;
+    background-color: #fff;
+    flex: 1;
+    padding: 12px;
+    width: 1000px;
+    text-align: left;
+    canvas {
+      border: solid 1px #ccc;
+    }
+  }
+}

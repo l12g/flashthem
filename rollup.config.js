@@ -3,12 +3,23 @@ import ts from '@rollup/plugin-typescript';
 
 export default {
   input: "src/index.ts",
-  output: {
-    file: "dist/flashthem.js",
-    format: "umd",
-    path: "dist",
-    name: "flashthem",
-  },
+  output:[
+    {
+      file: "lib/index.cmd.js",
+      format: "cjs",
+      name: "flashthem",
+    },
+    {
+      file: "lib/index.umd.js",
+      format: "umd",
+      name: "flashthem",
+    },
+    {
+      file: "lib/index.esm.js",
+      format: "es",
+      name: "flashthem",
+    },
+  ],
   plugins: [ts(),
   // terser()
   ],
