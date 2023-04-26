@@ -30,11 +30,15 @@ nav {
   margin: 0;
   padding: 0;
   color: #666;
+
   li {
     padding: 4px;
     transition: all 0.3s;
-    &:hover {
-      color: #333;
+    > .menu {
+      margin-left: 12px;
+    }
+    &:link {
+      color: red !important;
     }
     a {
       display: block;
@@ -53,7 +57,22 @@ nav {
     width: 1000px;
     text-align: left;
     canvas {
-      border: solid 1px #ccc;
+      border: solid 1px #eee;
     }
+    section[id] {
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: dashed 1px #eee;
+    }
+  }
+}
+pre {
+  margin: 0;
+}
+.d-flex {
+  display: flex;
+  gap: 12px;
+  &__item {
+    flex: 1;
   }
 }

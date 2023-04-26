@@ -7,7 +7,7 @@ export default class Stage extends DisplayObjectContainer implements IEngine {
   public fps: number = 60;
   public mouseX: number;
   public mouseY: number;
-  public debug: boolean = true;
+  public debug: boolean = false;
   public readonly canvas: HTMLCanvasElement;
   private _renderer: Renderer;
   private _engine: Engine;
@@ -42,12 +42,12 @@ export default class Stage extends DisplayObjectContainer implements IEngine {
     }
     this.on("enter-frame", () => {
       if (!this.debug) return;
-      this.graphics.clear();
-      this.graphics.lineStyle(1, "red");
-      this.children.forEach((c) => {
-        const aabb = c.aabb;
-        this.graphics.drawRect(aabb.x, aabb.y, aabb.w, aabb.h);
-      });
+      // this.graphics.clear();
+      // this.graphics.lineStyle(1, "red");
+      // this.children.forEach((c) => {
+      //   const aabb = c.aabb;
+      //   this.graphics.drawRect(aabb.x, aabb.y, aabb.w, aabb.h);
+      // });
     });
   }
   private onMouse(e: MouseEvent) {
@@ -60,7 +60,6 @@ export default class Stage extends DisplayObjectContainer implements IEngine {
     const canvas = this.canvas;
     const oldWidth = this.width;
     const oldHeight = this.height;
-    console.log(oldWidth, oldHeight, this.dpr);
     canvas.width = oldWidth * this.dpr;
     canvas.height = oldHeight * this.dpr;
     canvas.style.width = oldWidth + "px";
