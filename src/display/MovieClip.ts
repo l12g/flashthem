@@ -76,8 +76,8 @@ export default class MovieClip extends Bitmap implements IEngine {
       this.width = clip.w;
       this.height = clip.h;
     }
-
-    renderer.context.drawImage(
+    this.graphics.clear();
+    this.graphics.drawImage(
       this._imgEl,
       clip.x,
       clip.y,

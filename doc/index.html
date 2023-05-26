@@ -1,70 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-    <script src="src/index.js" type="module" defer></script>
-  </head>
-  <body>
-    <nav class="app-nav">
-      <ul class="menu">
-        <li>
-          <a href="#intr">介绍</a>
-        </li>
-        <li>
-          <a href="#sprite">Sprite</a>
-        </li>
-      </ul>
-    </nav>
-    <div class="app-root">
-      <section id="intr">
-        <h3>介绍</h3>
-        <div>flashem是一个基于canvas的渲染引擎，类似于pixijs。</div>
-      </section>
+<html>
 
-      <section id="basic">
-        <h3>基本概念</h3>
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="./style/indes.css">
+  <link crossorigin="anonymous" href="https://lib.baomitu.com/docsify/latest/themes/vue.css" rel="stylesheet">
+  <script src="./lib/index.umd.js"></script>
+</head>
 
-        <h4 id="event-dispatcher">事件对象</h4>
-        <p>EventDispatcher，是所有对象的基类，可以派发或监听事件。</p>
+<body>
+  <div id="app"></div>
+  <script>
+    let sn = 0;
+    const regxp = /\/\/hides[\w\W]+?\/\/hidee/g;
 
-        <h4 id="display-object">显示对象</h4>
-        <p>
-          DisplayObject，继承自EventDispatcher，是所有显示对象的基类，这是一个抽象类，无法被实例化。
-        </p>
-        <p>它包含了显示对象的公共属性，如x、y、width、height等。</p>
+    window.$docsify = {
+      loadSidebar: true,
+      subMaxLevel: 2,
+      executeScript: true,
+      plugins: [
+        function (hook) {
+          hook.doneEach(function () {
+            const demoBlock = [...document.querySelectorAll('.demo-block')];
+            demoBlock.forEach(d => {
+              const ct = d.querySelector('.tab-content');
+              const canvas = d.querySelector('canvas');
+              const { clientWidth: width, clientHeight: height } = ct;
+              canvas.width = width;
+              const ctx = {
+                canvas,
+                width,
+                height
+              }
+              const js = d.querySelector('textarea').value;
+              const fn = new Function(`
+              const {canvas,width,height}=this;
+              ${js};
+              `)
+              fn.call(ctx);
+            })
+          });
+        },
+      ],
+      markdown: {
+        renderer: {
+          code(code) {
+            const isDemo = /flashthem/g.test(code);
+            if (!isDemo) {
+              return this.origin.code.apply(this, arguments);
+            }
+            sn++;
+            const codestr = this.origin.code.call(this, code.replace(regxp, ''), arguments[1], arguments[2]);
+            const str = `<div class="demo-block">
+                <textarea>${code}</textarea>
+                <input checked type="radio" name="tab-${sn}" id="tab-${sn}-js"/>
+                <label for="tab-${sn}-js">Result</label>
+                <div class="tab-content">
+                  <canvas height="400"/>
+                </div>
+                <input type="radio" name="tab-${sn}" id="tab-${sn}-canvas"/>
+                <label style="left:100px" for="tab-${sn}-canvas">Code</label>
+                <div class="tab-content">
+                  ${codestr}
+                </div>
+              </div>`;
+            return str;
+          }
+        }
+      },
+    }
+  </script>
+  <script src="https://lib.baomitu.com/docsify/latest/docsify.min.js"></script>
+  <script crossorigin="anonymous" src="https://lib.baomitu.com/prism/latest/components/prism-typescript.min.js"></script>
 
-        <h4 id="display-object-container">显示对象容器</h4>
-        <p>
-          DisplayObjectContainer，继承自DisplayObject，可以添加其他元素为子元素，Stage也是其子类。
-        </p>
+</body>
 
-        <h4 id="stage">舞台</h4>
-        <p>
-          Staget，是flashthem中的根容器，任何元素都必须添加到舞台上才能显示。
-        </p>
-        <div id="code-stage"></div>
-      </section>
-
-      <section id="sprite">
-        <h3>Sprite-精灵</h3>
-        <p>sprite是最基本的显示单元，可以绘制矩形，圆和线条等</p>
-        <div class="d-flex">
-          <div id="code-sprite" class="d-flex__item"></div>
-          <canvas id="demo-sprite" width="400" height="300"></canvas>
-        </div>
-      </section>
-
-      <section id="bitmap">
-        <h3>Bitmap-位图</h3>
-        <p>可以载入图片</p>
-        <div class="d-flex">
-          <div id="code-sprite" class="d-flex__item"></div>
-          <canvas id="demo-sprite" width="400" height="300"></canvas>
-        </div>
-      </section>
-    </div>
-  </body>
 </html>

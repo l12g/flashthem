@@ -8,6 +8,7 @@ html {
   min-height: 100%;
   font-size: 14px;
   color: #333;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 body {
   margin: 0 auto;
@@ -36,6 +37,7 @@ nav {
     transition: all 0.3s;
     > .menu {
       margin-left: 12px;
+      display: none;
     }
     &:link {
       color: red !important;
@@ -44,6 +46,12 @@ nav {
       display: block;
       text-decoration: none;
       color: inherit;
+    }
+    &.active {
+      color: #4e6ef2;
+      & > .menu {
+        display: block !important;
+      }
     }
   }
 }
@@ -58,11 +66,23 @@ nav {
     text-align: left;
     canvas {
       border: solid 1px #eee;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) inset;
     }
     section[id] {
       margin-bottom: 24px;
       padding-bottom: 24px;
       border-bottom: dashed 1px #eee;
+      p {
+        color: #666;
+        code {
+          background-color: darken(#fff, 5);
+          border: solid 1px darken(#fff, 15);
+          border-radius: 5px;
+          padding: 0 5px;
+          margin: 0 4px;
+        }
+      }
     }
   }
 }
@@ -74,5 +94,12 @@ pre {
   gap: 12px;
   &__item {
     flex: 1;
+  }
+}
+
+.demo-block {
+  margin-bottom: 60px;
+  &-code {
+    width: 0;
   }
 }

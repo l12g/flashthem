@@ -15,7 +15,7 @@ export default abstract class DisplayObjectContainer extends DisplayObject {
     child.remove();
     this.children.splice(idx, 0, child);
     child.parent = this;
-    child.emit("added");
+    child.emit("add-to-stage");
   }
   public removeChild(child: DisplayObject) {
     this.removeChildAt(this.children.indexOf(child));
@@ -36,5 +36,8 @@ export default abstract class DisplayObjectContainer extends DisplayObject {
       this.children[idx2] = child1;
       this.children[idx1] = child2;
     }
+  }
+  public override dispose() {
+    this.children.forEach((ch) => ch.dispose());
   }
 }

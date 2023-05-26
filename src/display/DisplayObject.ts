@@ -1,13 +1,12 @@
 import { Stage } from "..";
 import Graphics from "../core/Graphics";
 import Renderer from "../core/Renderer";
-import Vec2 from "../gemo/Vec2";
 import EventDispatcher from "../event/Dispatcher";
 import Matrix2D from "../gemo/Matrix2D";
-import DisplayObjectContainer from "./DisplayObjectContainer";
+import Vec2 from "../gemo/Vec2";
 import { getType } from "../utils";
 import BitmapCache from "./BitmapCache";
-import Filter from "../filters/Filter";
+import DisplayObjectContainer from "./DisplayObjectContainer";
 
 type BlendMode =
   | "source-over"
@@ -39,11 +38,20 @@ type BlendMode =
 
 type AABB = { x: number; y: number; w: number; h: number };
 export default abstract class DisplayObject extends EventDispatcher {
+  public shadow: {
+    color: string;
+    blur: number;
+    offsetX: number;
+    offsetY: number;
+  };
   private _mtx: Matrix2D;
   private _bitmapCache: BitmapCache;
   private _filters = [];
   public get filters() {
     return this._filters;
+  }
+  public set filters(v: any[]) {
+    this._filters = v;
   }
   public get bitmapCache(): BitmapCache {
     return this._bitmapCache;
@@ -226,8 +234,10 @@ export default abstract class DisplayObject extends EventDispatcher {
     if (this.useBitmapCache) {
       this.drawCache();
     }
-    this.graphics.draw(render.context, evt);
-    this.onRender(render, evt, elapsed);
+    this.graphics.draw(render.context, evt, () => {
+      this.onRender(render, evt, elapsed);
+    });
+
     render.context.restore();
     this.emit("exit-frame", render);
   }
@@ -305,6 +315,8 @@ export default abstract class DisplayObject extends EventDispatcher {
    * @returns
    */
   public get aabb(): AABB {
+    const ox = this.pivotX * this.width;
+    const oy = this.pivotY * this.height;
     const [p1, p2, p3, p4] = this.vertex;
     const minx = Math.min(p1.x, p2.x, p3.x, p4.x);
     const miny = Math.min(p1.y, p2.y, p3.y, p4.y);
@@ -326,29 +338,27 @@ export default abstract class DisplayObject extends EventDispatcher {
     const b = sin;
     const c = -sin;
     const d = cos;
-    const mtx = new Matrix2D(a, b, c, d, 0, 0);
 
     const hw = this.width;
     const hh = this.height;
-
+    const px = this.pivotX * this.width;
+    const py = this.pivotY * this.height;
+    const { globalX: gx, globalY: gy, width: w, height: h } = this;
     // top-left
-    const p1 = new Vec2();
+    const p1 = new Vec2(gx, gy);
+
     // top-right
-    const p2 = new Vec2(a * hw, b * hw);
+    const p2 = new Vec2(p1.x+a * hw, b * hw);
     // bottom-right
     const p3 = new Vec2(a * hw + c * hh, b * hw + d * hh);
     // bottom-left
     const p4 = new Vec2(c * hh, d * hh);
-    return [p1, p2, p3, p4].map((v) => {
-      return v.addxy(this.globalX, this.globalY);
-    });
-  }
-
-  public addFilter(filter: Filter) {
-    this._filters.push(filter);
+    return [p1, p2, p3, p4];
   }
 
   private updateBitmapCache() {
     this._useBitmapCache && this._bitmapCache.reset();
   }
+
+  public dispose(): void {}
 }

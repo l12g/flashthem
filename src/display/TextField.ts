@@ -13,62 +13,87 @@ type TextBaseLine =
   | "alphabetic"
   | "ideographic"
   | "bottom";
+
+const DEFAULT_FONT = "24px STheiti, SimHei";
 export default class TextField extends DisplayObject {
   private _text: string;
-  private _textWidth: number;
-  private _textHeight: number;
   public get text(): string {
     return this._text;
   }
   public set text(value: string) {
     this._text = value;
+    this.adjust();
   }
-  private _font: string = "24px STheiti, SimHei";
+  private _textWidth: number;
+  private _textHeight: number;
+  public color: string;
+  private _size: string;
+  public get size(): string {
+    return this._size;
+  }
+  public set size(value: string) {
+    this._size = value;
+    this.adjust();
+  }
+
+  private _fontFamily: string = "STheiti";
+  public get fontFamily(): string {
+    return this._fontFamily;
+  }
+  public set fontFamily(value: string) {
+    this._fontFamily = value;
+    this.adjust();
+  }
+  private _font: string;
   public get font(): string {
     return this._font;
   }
   public set font(value: string) {
     this._font = value;
+    this.adjust();
   }
-
-  private _textAlign: TextAlign;
-  public get textAlign(): TextAlign {
-    return this._textAlign;
-  }
-  public set textAlign(value: TextAlign) {
-    this._textAlign = value;
-  }
-
-  private _textBaseline: TextBaseLine = "top";
-  public get textBaseline(): TextBaseLine {
-    return this._textBaseline;
-  }
-  public set textBaseline(value: TextBaseLine) {
-    this._textBaseline = value;
-  }
-
+  public align: TextAlign = "left";
+  public baseLine: TextBaseLine = "top";
   public wrap: boolean = true;
+  private _adjusted: boolean = false;
   constructor(text: string) {
     super();
     this.text = text;
   }
-  public onRender(renderer: Renderer, evt: MouseEvent, elapsed: number) {
-    renderer.context.textBaseline = this.textBaseline;
-    renderer.context.textAlign = this.textAlign;
-    renderer.context.font = this.font;
-    this.adjust(renderer);
-    renderer.context.fillText(this.text, 0, 0, this.width);
+
+  private getFont() {
+    if (this.font) {
+      return this.font;
+    }
+    return (
+      [this.size, this.fontFamily].filter(Boolean).join(" ") || DEFAULT_FONT
+    );
   }
-  private adjust(renderer: Renderer) {
-    const rect = renderer.context.measureText(this.text);
+  public onRender(renderer: Renderer, evt: MouseEvent, elapsed: number) {
+    if (!this._adjusted) {
+      this.adjust();
+    }
+    this.graphics.beginFill(this.color);
+    renderer.context.textBaseline = this.baseLine;
+    renderer.context.textAlign = this.align;
+    renderer.context.font = this.getFont();
+    renderer.context.fillText(this.text, 0, 0, this.width);
+    // this.graphics.drawText(this.text,0,0,this.getFont())
+  }
+  private adjust() {
+    const { stage } = this;
+    if (!stage) {
+      return;
+    }
+    stage.context.save();
+    stage.context.font = this.getFont();
+    const rect = stage.context.measureText(this.text);
     this._textWidth = rect.width;
     this._textHeight =
       rect.actualBoundingBoxAscent + rect.actualBoundingBoxDescent;
-    if (this.width === 0) {
-      this.width = this._textWidth;
-    }
-    if (this.height === 0) {
-      this.height = this._textHeight;
-    }
+    this.width = this._textWidth;
+    this.height = this._textHeight;
+    stage.context.restore();
+    this._adjusted = true;
   }
 }

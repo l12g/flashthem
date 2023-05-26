@@ -3,7 +3,6 @@
  * new Bitmap(src)
  * new Bitmap("role.png")
  */
-import Renderer from "../core/Renderer";
 import DisplayObject from "./DisplayObject";
 
 export default class Bitmap extends DisplayObject {
@@ -30,31 +29,23 @@ export default class Bitmap extends DisplayObject {
     this._imgEl.onload = () => {
       this._rawWidth = this._imgEl.naturalWidth;
       this._rawHeight = this._imgEl.naturalHeight;
-      if (this.width === 0) {
-        this.width = this._rawWidth;
-      }
-      if (this.height === 0) {
-        this.height = this._rawHeight;
-      }
+      this.width = this._rawWidth;
+      this.height = this._rawHeight;
       this._loaded = true;
-      this.emit("load");
+      setTimeout(() => {
+        this.emit("load");
+      }, 0);
+      this.graphics.drawImage(
+        this._imgEl,
+        0,
+        0,
+        this._rawWidth,
+        this._rawHeight,
+        -this.width * this.pivotX,
+        -this.height * this.pivotY,
+        this.width,
+        this.height
+      );
     };
-  }
-  public render(renderer: Renderer, evt: MouseEvent, elapsed: number) {
-    if (!this._loaded) return;
-    super.render(renderer, evt, elapsed);
-  }
-  public onRender(renderer: Renderer, evt?: MouseEvent) {
-    renderer.context.drawImage(
-      this._imgEl,
-      0,
-      0,
-      this._rawWidth,
-      this._rawHeight,
-      -this.width * this.pivotX,
-      -this.height * this.pivotY,
-      this.width,
-      this.height
-    );
   }
 }

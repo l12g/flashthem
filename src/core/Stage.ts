@@ -1,13 +1,14 @@
-import Renderer from "./Renderer";
-import Engine, { IEngine } from "./Engine";
 import DisplayObjectContainer from "../display/DisplayObjectContainer";
-import { Fps } from "..";
+import Fps from "../display/Fps";
+import Grid from "../display/Grid";
+import Sprite from "../display/Sprite";
+import Engine, { IEngine } from "./Engine";
+import Renderer from "./Renderer";
 export default class Stage extends DisplayObjectContainer implements IEngine {
-  static DPR: number = 1;
+  static context: CanvasRenderingContext2D;
   public fps: number = 60;
   public mouseX: number;
   public mouseY: number;
-  public debug: boolean = false;
   public readonly canvas: HTMLCanvasElement;
   private _renderer: Renderer;
   private _engine: Engine;
@@ -18,10 +19,18 @@ export default class Stage extends DisplayObjectContainer implements IEngine {
   }
   public set dpr(value: number) {
     value = Math.max(1, value);
-    Stage.DPR = value;
     this._dpr = value;
     this.adjustDpr();
   }
+
+  public get context() {
+    return this._renderer.context;
+  }
+  private mouseHandler = (e: MouseEvent) => {
+    this._mouseEvent = e;
+    this.mouseX = e.offsetX;
+    this.mouseY = e.offsetY;
+  };
   constructor(el: HTMLCanvasElement | string, dpr?: number) {
     super();
     const canvas: HTMLCanvasElement = (this.canvas =
@@ -29,33 +38,45 @@ export default class Stage extends DisplayObjectContainer implements IEngine {
     this.width = canvas.width;
     this.height = canvas.height;
     this.dpr = dpr || window.devicePixelRatio;
-    this._renderer = new Renderer(canvas);
+    this._renderer = new Renderer(canvas, this._dpr);
     this._engine = new Engine(this);
-    const mouseHandler = this.onMouse.bind(this);
-    canvas.addEventListener("mousemove", mouseHandler);
-    canvas.addEventListener("click", mouseHandler);
-    canvas.addEventListener("mouseup", mouseHandler);
-    canvas.addEventListener("mousedown", mouseHandler);
-    canvas.addEventListener("touchmove", this.onTouchMove.bind(this));
-    if (this.debug) {
+    canvas.addEventListener("mousemove", this.mouseHandler);
+    canvas.addEventListener("click", this.mouseHandler);
+    canvas.addEventListener("mouseup", this.mouseHandler);
+    canvas.addEventListener("mousedown", this.mouseHandler);
+
+    Stage.context = this._renderer.context;
+  }
+  public debug(v: boolean | { grid?: boolean }) {
+    if (v) {
+      const box = new Sprite();
       this.addChild(new Fps());
+      const g = new Grid();
+      g.width = this.width;
+      g.height = this.height;
+      this.addChildAt(g, 0);
+      this.addChild(box);
+      const draw = (c) => {
+        if (c === box || c === g) {
+          return;
+        }
+        const { x, y, w, h } = c.aabb;
+        box.graphics.drawRect(x, y, w, h);
+        box.graphics.drawCircle(c.x, c.y, 3);
+        
+        if (c.children) {
+          c.children.forEach(draw);
+        }
+      };
+      if ((v as any).grid) {
+        this.on("enter-frame", () => {
+          box.graphics.clear();
+          box.graphics.lineStyle(1, "red");
+          this.children.forEach(draw);
+        });
+      }
     }
-    this.on("enter-frame", () => {
-      if (!this.debug) return;
-      // this.graphics.clear();
-      // this.graphics.lineStyle(1, "red");
-      // this.children.forEach((c) => {
-      //   const aabb = c.aabb;
-      //   this.graphics.drawRect(aabb.x, aabb.y, aabb.w, aabb.h);
-      // });
-    });
   }
-  private onMouse(e: MouseEvent) {
-    this._mouseEvent = e;
-    this.mouseX = e.offsetX;
-    this.mouseY = e.offsetY;
-  }
-  private onTouchMove(e: TouchEvent) {}
   private adjustDpr() {
     const canvas = this.canvas;
     const oldWidth = this.width;
@@ -77,5 +98,14 @@ export default class Stage extends DisplayObjectContainer implements IEngine {
   }
   public override remove() {
     return this;
+  }
+  public override dispose() {
+    super.dispose();
+    this._engine.stop();
+    const { canvas } = this;
+    canvas.addEventListener("mousemove", this.mouseHandler);
+    canvas.addEventListener("click", this.mouseHandler);
+    canvas.addEventListener("mouseup", this.mouseHandler);
+    canvas.addEventListener("mousedown", this.mouseHandler);
   }
 }

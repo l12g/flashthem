@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <canvas id="map" width="550" height="400" style="border:solid 1px #ccc"></canvas>
+    <script>
+        const px = .5;
+        const py = .5;
+        const x = 100, y = 100;
+        const w = 100, h = 100
+        const size = 50;
+        const ctx = document.querySelector('#map').getContext('2d');
+        ctx.fillStyle = 'red';
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#ccc';
+        ctx.beginPath();
+        for (let i = 0; i < 550; i += size) {
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, 400);
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        for (let j = 0; j < 400; j += size) {
+            ctx.moveTo(0, j);
+            ctx.lineTo(550, j);
+        }
+        ctx.stroke();
+
+        ctx.translate(x - px * w, y - py * h);
+        ctx.rotate(Math.PI / 4);
+
+        ctx.fillRect(0, 0, w, h);
+
+
+    </script>
+</body>
+
+</html>

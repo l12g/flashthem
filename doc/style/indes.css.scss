@@ -1,0 +1,36 @@
+.demo-block {
+  position: relative;
+  padding-top: 50px;
+  label {
+    display: block;
+    cursor: pointer;
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 0 12px;
+    width: 100px;
+    text-align: center;
+    border-radius: 10px 10px 0 0;
+    line-height: 50px;
+  }
+  textarea {
+    display: none;
+  }
+  .tab-content {
+    display: none;
+    min-height: 100px;
+    background-color: #f8f8f8;
+    border: solid 1px #f8f8f8;
+  }
+  input[type="radio"] {
+    position: absolute;
+    left: -99999px;
+    &:checked + label {
+      color: var(--theme-color, #42b983);
+      background-color: #f8f8f8;
+    }
+    &:checked + label + .tab-content {
+      display: block;
+    }
+  }
+}

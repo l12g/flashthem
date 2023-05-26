@@ -1,5 +1,4 @@
 import DisplayObject from "../display/DisplayObject";
-import Renderer from "./Renderer";
 
 interface GraphicsCommand {
   (ctx: CanvasRenderingContext2D): void;
@@ -10,6 +9,9 @@ export default class Graphics {
   private _needFill = false;
   private _commands: GraphicsCommand[] = [];
   private _target: DisplayObject;
+  private _hovered: boolean;
+  public context: CanvasRenderingContext2D;
+  private _leaved: boolean;
   public get commands() {
     return this._commands;
   }
@@ -20,18 +22,35 @@ export default class Graphics {
     this._needFill && ctx.fill();
     this._needStroke && ctx.stroke();
   }
-  public draw(ctx: CanvasRenderingContext2D, evt?: MouseEvent) {
+  public draw(
+    ctx: CanvasRenderingContext2D,
+    evt?: MouseEvent,
+    onDraw?: () => void
+  ) {
+    this.context = ctx;
     const target = this._target;
     const mtx = target.matrix;
 
-    ctx.transform(
-      mtx.a,
-      mtx.b,
-      mtx.c,
-      mtx.d,
-      Math.floor(mtx.tx),
-      Math.floor(mtx.ty)
+    if (target.shadow) {
+      ctx.shadowBlur = target.shadow.blur;
+      ctx.shadowColor = target.shadow.color;
+      ctx.shadowOffsetX = target.shadow.offsetX;
+      ctx.shadowOffsetY = target.shadow.offsetY;
+    }
+    // ctx.transform(
+    //   mtx.a,
+    //   mtx.b,
+    //   mtx.c,
+    //   mtx.d,
+    //   Math.floor(mtx.tx),
+    //   Math.floor(mtx.ty)
+    // );
+    ctx.translate(
+      target.x,
+      target.y,
     );
+    ctx.scale(target.scaleX, target.scaleY);
+    ctx.rotate((target.rotation * Math.PI) / 180);
     if (target.useBitmapCache) {
       target.bitmapCache.draw(ctx);
     } else {
@@ -41,27 +60,47 @@ export default class Graphics {
         ? target.parent.alpha * target.alpha
         : target.alpha;
 
-      target.filters.forEach((f) => {
-        ctx.filter = f.toString();
-      });
+      ctx.filter = target.filters.map((o) => o.toString()).join(" ");
+      onDraw && onDraw();
+
       for (const cmd of this._commands) {
         const result = cmd.call(this, ctx);
         result && this.afterDraw(ctx);
       }
     }
-
-    if (evt && target.mouseEnable) {
-      const { offsetX, offsetY } = evt;
-      if (
-        ctx.isPointInPath(offsetX, offsetY) ||
-        ctx.isPointInStroke(offsetX, offsetY)
-      ) {
-        target.emit(evt.type);
-      }
-    }
-
+    this.checkEvent(ctx, evt);
     this._needStroke = false;
     this._needFill = false;
+  }
+
+  private checkEvent(ctx: CanvasRenderingContext2D, evt: MouseEvent) {
+    const target = this._target;
+    if (evt && target.mouseEnable) {
+      const dpr = target.stage.dpr;
+      const { offsetX, offsetY } = evt;
+      const ox = offsetX * dpr;
+      const oy = offsetY * dpr;
+      const data = {
+        x: ox,
+        y: oy,
+      };
+      const { type } = evt;
+      if (ctx.isPointInPath(ox, oy) || ctx.isPointInStroke(ox, oy)) {
+        if (type === "mousemove") {
+          if (!this._hovered) {
+            this._hovered = true;
+            target.emit("mouseover", data);
+          }
+        } else {
+          target.emit(evt.type, data);
+        }
+      } else {
+        if (this._hovered) {
+          this._hovered = false;
+          target.emit("mouseout", data);
+        }
+      }
+    }
   }
 
   public clear() {
@@ -84,6 +123,18 @@ export default class Graphics {
       ctx.lineJoin = join;
       ctx.lineCap = cap;
       ctx.strokeStyle = color;
+    });
+  }
+
+  public fontStyle(
+    font: string,
+    align?: CanvasTextAlign,
+    baseLine?: CanvasTextBaseline
+  ) {
+    this._commands.push(function (ctx) {
+      ctx.textAlign = align;
+      ctx.textBaseline = baseLine;
+      ctx.font = font;
     });
   }
   public beginFill(color: string | CanvasGradient | CanvasPattern) {
@@ -109,14 +160,11 @@ export default class Graphics {
       return true;
     });
   }
-  public drawText(x: number, y: number, text: string, font: string) {
-    this._commands = [
-      (ctx: CanvasRenderingContext2D) => {
-        ctx.font = font;
-        ctx.fillText(text, x, y);
-        return true;
-      },
-    ];
+  public drawText(text: string, x: number, y: number, font: string) {
+    this._commands.push((ctx: CanvasRenderingContext2D) => {
+      ctx.font = font;
+      ctx.fillText(text, x, y, this._target.width);
+    });
   }
 
   public lineTo(x: number, y: number) {

@@ -1,20 +1,28 @@
-import { TextField } from "..";
 import Renderer from "../core/Renderer";
+import DisplayObject from "./DisplayObject";
 
-export default class Fps extends TextField {
+export default class Fps extends DisplayObject {
   private _frame: number = 0;
   private _t: number = 0;
   constructor() {
-    super("fps:0");
-    this.font = "12px _sans";
-    this.graphics.beginFill('red');
+    super();
+    this.width = 50;
+    this.height = 20;
+    this.draw();
+  }
+  private draw() {
+    this.graphics.clear();
+    this.graphics.beginFill("#000");
+    this.graphics.drawRect(0, 0, 50, 20);
+    this.graphics.beginFill("#fff");
+    this.graphics.fontStyle("18px", "center", "middle");
+    this.graphics.drawText("fps:" + this._frame, 25, 10, "18px");
   }
   public onRender(render: Renderer, evt: MouseEvent, elapsed: number) {
-    super.onRender(render, evt, elapsed);
     this._t += elapsed;
     this._frame++;
-    if (this._t > 1000) {
-      this.text = "fps:" + this._frame;
+    if (this._t >= 1000) {
+      this.draw();
       this._t = 0;
       this._frame = 0;
     }
