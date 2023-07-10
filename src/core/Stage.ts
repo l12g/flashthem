@@ -60,10 +60,11 @@ export default class Stage extends DisplayObjectContainer implements IEngine {
         if (c === box || c === g) {
           return;
         }
-        const { x, y, w, h } = c.aabb;
+        const { x, y, w, h, globalX: gx, globalY: gy } = c.aabb;
+
         box.graphics.drawRect(x, y, w, h);
         box.graphics.drawCircle(c.x, c.y, 3);
-        
+
         if (c.children) {
           c.children.forEach(draw);
         }

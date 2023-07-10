@@ -29,7 +29,6 @@ export default class Graphics {
   ) {
     this.context = ctx;
     const target = this._target;
-    const mtx = target.matrix;
 
     if (target.shadow) {
       ctx.shadowBlur = target.shadow.blur;
@@ -45,10 +44,7 @@ export default class Graphics {
     //   Math.floor(mtx.tx),
     //   Math.floor(mtx.ty)
     // );
-    ctx.translate(
-      target.x,
-      target.y,
-    );
+    ctx.translate(target.x, target.y);
     ctx.scale(target.scaleX, target.scaleY);
     ctx.rotate((target.rotation * Math.PI) / 180);
     if (target.useBitmapCache) {
@@ -145,8 +141,9 @@ export default class Graphics {
   }
   public drawRect(x: number, y: number, w: number, h: number) {
     this._commands.push(function (ctx) {
+      const { pivotX, pivotY, width, height } = this._target;
       ctx.beginPath();
-      ctx.rect(x, y, w, h);
+      ctx.rect(x - pivotX * width, y - pivotY * height, w, h);
       ctx.closePath();
       return true;
     });
@@ -154,8 +151,16 @@ export default class Graphics {
   public drawCircle(cx: number, cy: number, radius: number) {
     this._target.width = this._target.height = radius * 2;
     this._commands.push(function drawCircle(ctx) {
+      const { pivotX, pivotY, width, height } = this._target;
+
       ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.arc(
+        cx - pivotX * width,
+        cy - pivotY * height,
+        radius,
+        0,
+        Math.PI * 2
+      );
       ctx.closePath();
       return true;
     });
@@ -163,7 +168,8 @@ export default class Graphics {
   public drawText(text: string, x: number, y: number, font: string) {
     this._commands.push((ctx: CanvasRenderingContext2D) => {
       ctx.font = font;
-      ctx.fillText(text, x, y, this._target.width);
+      const { pivotX, pivotY, width, height } = this._target;
+      ctx.fillText(text, x - pivotX * width, y - pivotY * height, width);
     });
   }
 
@@ -201,7 +207,18 @@ export default class Graphics {
     dh: number
   ) {
     this._commands.push(function (ctx) {
-      ctx.drawImage(source, sx, sy, sw, sh, dx, dy, dw, dh);
+      const { pivotX, pivotY, width, height } = this._target;
+      ctx.drawImage(
+        source,
+        sx,
+        sy,
+        sw,
+        sh,
+        dx - pivotX * width,
+        dy - pivotY * height,
+        dw,
+        dh
+      );
     });
   }
 }

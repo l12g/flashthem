@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <button onclick="load()">load</button>
+  <script>
+    const ctx = new AudioContext();
+    let sur;
+    function load() {
+      sur && sur.stop();
+      sur = null;
+      fetch('./assets/music.mp3').then(d => d.arrayBuffer()).then(data => {
+        ctx.decodeAudioData(data, buffer => {
+          sur = ctx.createBufferSource();
+          sur.buffer = buffer;
+          sur.connect(ctx.destination);
+          sur.start();
+        })
+      })
+    }
+  </script>
+</body>
+
+</html>

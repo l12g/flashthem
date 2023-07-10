@@ -2,7 +2,6 @@
  * 文本
  * new TextField("hello world",font);
  */
-import Renderer from "../core/Renderer";
 import DisplayObject from "./DisplayObject";
 
 type TextAlign = "left" | "right" | "center" | "start" | "end";
@@ -22,18 +21,25 @@ export default class TextField extends DisplayObject {
   }
   public set text(value: string) {
     this._text = value;
-    this.adjust();
+    this.updateDraw();
   }
   private _textWidth: number;
   private _textHeight: number;
-  public color: string;
-  private _size: string;
+  private _color: string;
+  public get color(): string {
+    return this._color;
+  }
+  public set color(value: string) {
+    this._color = value;
+    this.updateDraw();
+  }
+  private _size: string = "24px";
   public get size(): string {
     return this._size;
   }
   public set size(value: string) {
     this._size = value;
-    this.adjust();
+    this.updateDraw();
   }
 
   private _fontFamily: string = "STheiti";
@@ -42,7 +48,7 @@ export default class TextField extends DisplayObject {
   }
   public set fontFamily(value: string) {
     this._fontFamily = value;
-    this.adjust();
+    this.updateDraw();
   }
   private _font: string;
   public get font(): string {
@@ -50,15 +56,17 @@ export default class TextField extends DisplayObject {
   }
   public set font(value: string) {
     this._font = value;
-    this.adjust();
+    this.updateDraw();
   }
   public align: TextAlign = "left";
-  public baseLine: TextBaseLine = "top";
+  public baseLine: TextBaseLine = "middle";
   public wrap: boolean = true;
-  private _adjusted: boolean = false;
   constructor(text: string) {
     super();
     this.text = text;
+    this.on("add-to-stage", () => {
+      this.adjust();
+    });
   }
 
   private getFont() {
@@ -69,16 +77,17 @@ export default class TextField extends DisplayObject {
       [this.size, this.fontFamily].filter(Boolean).join(" ") || DEFAULT_FONT
     );
   }
-  public onRender(renderer: Renderer, evt: MouseEvent, elapsed: number) {
-    if (!this._adjusted) {
-      this.adjust();
-    }
+
+  public onRender() {
+    this.graphics.context.textBaseline = this.baseLine;
+    this.graphics.context.textAlign = this.align;
+  }
+
+  private updateDraw() {
+    this.graphics.clear();
     this.graphics.beginFill(this.color);
-    renderer.context.textBaseline = this.baseLine;
-    renderer.context.textAlign = this.align;
-    renderer.context.font = this.getFont();
-    renderer.context.fillText(this.text, 0, 0, this.width);
-    // this.graphics.drawText(this.text,0,0,this.getFont())
+
+    this.graphics.drawText(this.text, 0, 0, this.getFont());
   }
   private adjust() {
     const { stage } = this;
@@ -94,6 +103,5 @@ export default class TextField extends DisplayObject {
     this.width = this._textWidth;
     this.height = this._textHeight;
     stage.context.restore();
-    this._adjusted = true;
   }
 }

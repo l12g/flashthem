@@ -1,4 +1,5 @@
 export * from "./core/Filter";
+export { default as Sound } from "./core/Sound";
 export { default as Stage } from "./core/Stage";
 export { default as Bitmap } from "./display/Bitmap";
 export { default as Fps } from "./display/Fps";

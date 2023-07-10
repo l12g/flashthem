@@ -6,38 +6,128 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        .point {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            background-color: red;
+            position: absolute;
+        }
+
+        html {
+
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .wrap {
+            width: 500px;
+            height: 500px;
+            border: solid 1px red;
+            position: relative;
+            margin: 100px;
+        }
+
+        .circle {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: solid 1px red;
+            transform: translate(calc(-50%), calc(-50%));
+            left: 0;
+            top: 0;
+        }
+        .box{
+            display: inline-block;
+            width: 100px;
+            height: 100px;
+            /* box-sizing: border-box; */
+            border: solid 10px transparent;
+            background-color: red;
+            padding: 10px;
+        }
+    </style>
 </head>
 
 <body>
-    <canvas id="map" width="550" height="400" style="border:solid 1px #ccc"></canvas>
+
+    <span class="box"></span>
+    <input type="range" id="ct" max="350" min="0">
+    <div class="wrap">
+        <span class="circle"></span>
+        <span class="point p1"></span>
+        <span class="point p2" style="background-color: green;"></span>
+        <span class="point p3" style="background-color: blue;"></span>
+        <span class="point p4" style="background-color: yellow;"></span>
+    </div>
+    <!-- <canvas id="map" width="550" height="400" style="border:solid 1px #ccc"></canvas> -->
     <script>
-        const px = .5;
-        const py = .5;
-        const x = 100, y = 100;
-        const w = 100, h = 100
-        const size = 50;
-        const ctx = document.querySelector('#map').getContext('2d');
-        ctx.fillStyle = 'red';
+        /**
+ * matrix( scaleX(), skewY(), skewX(), scaleY(), translateX(), translateY() )
+  static DEG_TO_RAD: number = Math.PI / 180;
+ */
+        const DEG_TO_RAD = Math.PI / 180;
+        class Matrix2D {
+            a = 1
+            b = 0
+            c = 0
+            d = 1
+            tx = 0
+            ty = 0
 
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = '#ccc';
-        ctx.beginPath();
-        for (let i = 0; i < 550; i += size) {
-            ctx.moveTo(i, 0);
-            ctx.lineTo(i, 400);
+            rotate(angel) {
+                const deg = angel * DEG_TO_RAD;
+                const { a: _a, b: _b, c: _c, d: _d } = this;
+                this.a = Math.cos(deg);
+                this.b = -Math.sin(deg);
+                this.c = Math.sin(deg);
+                this.d = Math.cos(deg);
+                return this;
+            }
+            mult(x, y) {
+                const { a, b, c, d } = this;
+                return [
+                    a * x + b * y + this.tx,
+                    c * x + d * y + this.ty
+                ]
+            }
+            move(x, y) {
+                this.tx = x;
+                this.ty = y;
+                return this;
+            }
+            toString() {
+                console.log(`
+                ${this.a}--${this.c}
+                ${this.b}--${this.d}
+                `)
+            }
         }
-        ctx.stroke();
-        ctx.beginPath();
-        for (let j = 0; j < 400; j += size) {
-            ctx.moveTo(0, j);
-            ctx.lineTo(550, j);
+
+
+        const m1 = new Matrix2D();
+
+        function update(el, arr) {
+            const [x, y] = arr;
+            document.querySelector(el).style.cssText = `left:${x}px;top:${y}px`
         }
-        ctx.stroke();
+        const p = [100, 0];
 
-        ctx.translate(x - px * w, y - py * h);
-        ctx.rotate(Math.PI / 4);
-
-        ctx.fillRect(0, 0, w, h);
+        // m1.tx = 20;
+        // m1.ty = 20;
+        m1.move(100,100)
+        document.querySelector('#ct').oninput = e => {
+            m1.rotate(e.target.value);
+            update('.p1', m1.mult(20, 20))
+            update('.p2', m1.mult(100, 0))
+            update('.p3', m1.mult(100, 100))
+            update('.p4', m1.mult(0, 100))
+        }
 
 
     </script>

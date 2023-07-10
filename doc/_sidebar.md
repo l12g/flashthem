@@ -11,4 +11,6 @@
     * [阴影](/demos/shadow)
     * [滤镜](/demos/filter)
     * [碰撞检测](/demos/hittest)
+    * [生命游戏](/demos/game-life)
+    * [声音](/demos/sound)
 * [API参考](/api)

@@ -4,9 +4,7 @@ let canvas: HTMLCanvasElement = document.createElement("canvas");
 canvas.style.cssText = "border:solid 1px red";
 const ctx = canvas.getContext("2d");
 
-setTimeout(() => {
-  document.querySelector("#bmptest").appendChild(canvas);
-}, 300);
+
 export function bitmapHitTest(a: DisplayObject, b: DisplayObject) {
   if (!a.stage || !b.stage) {
     return;

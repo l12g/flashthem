@@ -8,34 +8,12 @@ type EventHandlerArgs = {
 type EventHandler = (e: EventHandlerArgs) => void;
 ```
 
-#### 方法
-
-- on
-
-  `on(event: string, handler: EventHandler): void`
-
-  监听事件
-
-  > - `event` 事件类型
-  > - `handler` 事件处理器
-
-* off
-
-`off(event?:string, handler?: EventHandler) => void`
-
-> 取消监听
-
-- `event` 事件类型，不传则取消所有事件处理器
-- `handler` 事件处理器，不传则取消 event 下所有的处理器
-
-- emit
-
-`emit(event:string, data?:any)`
-
-> 派发事件
-
-- event 事件类型
-- data 事件参数
+| 名称   | 说明                                                     | 类型                                              | 默认值 |
+| ------ | -------------------------------------------------------- | ------------------------------------------------- | ------ |
+| on     | 监听事件                                                 | `(event: string, handler: EventHandler) => void`  |
+| off    | 取消监听，若 handler 为空， <br/> 则取消该类型所有监听器 | `(event: string, handler?: EventHandler) => void` |
+| offAll | 取消所有监听                                             | `() => void`                                      |
+| emit   | 派发事件                                                 | `emit(event:string, data?:any) => void`           |
 
 ## DisplayObject
 
@@ -47,94 +25,32 @@ class DisplayObject extends EventDispatcher { ... }
 
 #### 属性
 
-- x
-
-  横坐标
-
-  `target.x=100`
-
-- y
-
-  纵坐标
-
-  `target.y=100`
-
-- width
-
-  宽度
-
-  `target.width=100`
-
-- height
-
-  高度
-
-  `target.height=100`
-
-- alpha
-  透明度，范围 0~1
-
-  `target.alpha=.5`
-
-- scaleX
-
-  x 轴上缩放值
-
-- scaleY
-
-  y 轴上缩放值
-
-- skewX
-
-  x 轴上倾斜值
-
-- skewY
-
-  y 轴上缩放值
-
-- pivotX
-
-  水平锚点，范围 0~1
-
-- pivotY
-
-  垂直锚点，范围 0~1
-
-- stage
-
-  指向舞台的指针
-
-- parent
-
-  父容器
-
-- mouseEnable
-
-  是否启用交互事件，启用后才会接受事件
-
-
-- bitmapCache
-
-  是否启用位图缓存
-
-- snapToPixel
-
-  绘制时是否进行像素对齐
-
-- graphics
-
-  画笔，参考 [Graphics](api/graphics)
-
-  ```typescript
-  public graphics: Graphics;
-  ```
+| 名称        | 说明                                | 类型                     | 默认值  |
+| ----------- | ----------------------------------- | ------------------------ | ------- |
+| x           | 水平坐标                            | `number`                 | `0`     |
+| y           | 垂直坐标                            | `number`                 | `0`     |
+| width       | 宽度                                | `number`                 | `0`     |
+| height      | 高度                                | `number`                 | `0`     |
+| alpha       | 透明度，范围 0~1                    | `number`                 | `1`     |
+| scaleX      | 水平缩放                            | `number`                 | `1`     |
+| scaleY      | 垂直缩放                            | `number`                 | `1`     |
+| skewX       | 水平倾斜                            | `number`                 | `1`     |
+| skewY       | 垂直倾斜                            | `number`                 | `1`     |
+| pivotX      | 水平锚点                            | `number`                 | `0`     |
+| pivotY      | 垂直锚点                            | `number`                 | `0`     |
+| stage       | 舞台                                | `Stage`                  | `null`  |
+| parent      | 父容器                              | `DisplayObjectContainer` | `null`  |
+| mouseEnable | 启用交互                            | `boolean`                | `false` |
+| bitmapCache | 开启位图缓存                        | `boolean`                | `false` |
+| snapToPixel | 像素对齐                            | `boolean`                | `false` |
+| graphics    | 画笔，参考 [Graphics](api/graphics) | `Graphics`               |
 
 #### 方法
 
-- hitTestObject
-- hitTestPoint
-
-
+| 名称          | 说明                 | 类型                             | 默认值 |
+| ------------- | -------------------- | -------------------------------- | ------ |
+| hitTestObject | 与矩形对象的碰撞检测 | `(obj:DisplayObject) => boolean` |
+| hitTestPoint  | 与点的碰撞检测       | `(x:number,y:number) => boolean` |
 
 ## DisplayObjectContainer
 
@@ -146,62 +62,19 @@ class DisplayObjectContainer extends DisplayObject { ... }
 
 #### 属性
 
-- children
-  子节点
+| 名称     | 说明   | 类型              | 默认值 |
+| -------- | ------ | ----------------- | ------ |
+| children | 子节点 | `DisplayObject[]` | `[]`   |
 
 #### 方法
 
-- addChild
-
-  ```typescript
-  type addChild = (child: DisplayObject) => void;
-  ```
-
-  添加子元素
-
-  > - child 要添加的元素
-
-- addChildAt
-
-  ```typescript
-  type addChildAt = (child: DisplayObject, index: number) => void;
-  ```
-
-  添加子元素到指定层级
-
-  > - child 要添加的元素
-  > - index 位置
-
-- removeChild
-
-  ```typescript
-  type removeChild = (child: DisplayObject) => void;
-  ```
-
-  移除子元素
-
-  > - child 要移除的元素
-
-- removeChildAt
-
-  ```typescript
-  type removeChildAt = (index: number) => void;
-  ```
-
-  移除指定位置的子元素
-
-  > - index 要移除的元素索引
-
-- swapChild
-
-  ```typescript
-  type swapChild = (a: DisplayObject, b: DisplayObject) => void;
-  ```
-
-  交换子元素位置
-
-  > - a 元素 a
-  > - b 元素 b
+| 名称          | 说明                 | 类型                                                  |
+| ------------- | -------------------- | ----------------------------------------------------- |
+| addChild      | 添加子元素           | `(child:DisplayObject) => void`                       |
+| addChildAt    | 添加子元素到指定层级 | `(child:DisplayObject,index:number) => void`          |
+| removeChild   | 移除子元素           | `(child:DisplayObject) => void`                       |
+| removeChildAt | 移除指定位置的子元素 | `(child:DisplayObject,index:number) => void`          |
+| swapChild     | 交换子元素位置       | `(childA:DisplayObject,childB:DisplayObject) => void` |
 
 ## Stage
 
@@ -216,25 +89,17 @@ class Stage extends DisplayObjectContainer {
 
 #### 属性
 
-- fps
-
-  帧率，默认 60
-
-- canvas
-
-  绘制的 canvas 的 dom 节点
+| 名称   | 说明     | 类型                | 默认值 |
+| ------ | -------- | ------------------- | ------ |
+| fps    | 帧率     | `number`            | `60`   |
+| canvas | 画布节点 | `HtmlCanvasElement` |
 
 #### 方法
 
-- addCanvas
+| 名称      | 说明                                       | 类型                                                  |
+| --------- | ------------------------------------------ | ----------------------------------------------------- |
+| addCanvas | 添加 canvas 节点，通常用于绘制到多个画布上 | `type addCanvas = (canvas: HTMLCanvasElement) => void`
 
-  添加 canvas 节点，通常用于绘制到多个画布上
-
-  ```typescript
-  type addCanvas = (canvas: HTMLCanvasElement) => void;
-  ```
-
-  - canvas canvas dom
 
 ## Sprite
 
@@ -243,8 +108,6 @@ class Stage extends DisplayObjectContainer {
 class Sprite extends DisplayObjectContainer { ... }
 
 ```
-
-
 
 ## Bitmap
 
@@ -260,7 +123,6 @@ class Bitmap extends DisplayObject {
 - src
 
   图片地址
-
 
 ## MovieClip
 

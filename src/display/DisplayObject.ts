@@ -292,31 +292,11 @@ export default abstract class DisplayObject extends EventDispatcher {
     );
   }
 
-  public get matrix(): Matrix2D {
-    this._mtx = this._mtx || new Matrix2D();
-    this._mtx
-      .identity()
-      .appendTransform(
-        this.x,
-        this.y,
-        this.scaleX,
-        this.scaleY,
-        this.rotation,
-        this.skewX,
-        this.skewY,
-        this.pivotX,
-        this.pivotY
-      );
-    return this._mtx;
-  }
-
   /**
    *
    * @returns
    */
   public get aabb(): AABB {
-    const ox = this.pivotX * this.width;
-    const oy = this.pivotY * this.height;
     const [p1, p2, p3, p4] = this.vertex;
     const minx = Math.min(p1.x, p2.x, p3.x, p4.x);
     const miny = Math.min(p1.y, p2.y, p3.y, p4.y);
@@ -331,29 +311,23 @@ export default abstract class DisplayObject extends EventDispatcher {
   }
 
   public get vertex(): Vec2[] {
-    const rad = (this.rotation / 180) * Math.PI;
-    const sin = Math.sin(rad);
-    const cos = Math.cos(rad);
-    const a = cos;
-    const b = sin;
-    const c = -sin;
-    const d = cos;
+    const { width, height, pivotX, pivotY } = this;
+    const ox = width * pivotX * -1;
+    const oy = height * pivotY * -1;
+    const p1 = new Vec2(ox, oy);
+    const p2 = new Vec2(ox + width, oy);
+    const p3 = new Vec2(ox + width, oy + height);
+    const p4 = new Vec2(ox, oy + height);
+    const mtx = new Matrix2D();
+    mtx
+      .translate(this.globalX, this.globalY)
+      .rotate(this.rotation)
+      .scale(this.scaleX, this.scaleY);
 
-    const hw = this.width;
-    const hh = this.height;
-    const px = this.pivotX * this.width;
-    const py = this.pivotY * this.height;
-    const { globalX: gx, globalY: gy, width: w, height: h } = this;
-    // top-left
-    const p1 = new Vec2(gx, gy);
-
-    // top-right
-    const p2 = new Vec2(p1.x+a * hw, b * hw);
-    // bottom-right
-    const p3 = new Vec2(a * hw + c * hh, b * hw + d * hh);
-    // bottom-left
-    const p4 = new Vec2(c * hh, d * hh);
-    return [p1, p2, p3, p4];
+    return [p1, p2, p3, p4].map((o) => {
+      const [x, y] = mtx.mult(o.x, o.y);
+      return new Vec2(x, y);
+    });
   }
 
   private updateBitmapCache() {

@@ -41,8 +41,8 @@ export default class Bitmap extends DisplayObject {
         0,
         this._rawWidth,
         this._rawHeight,
-        -this.width * this.pivotX,
-        -this.height * this.pivotY,
+        0,
+        0,
         this.width,
         this.height
       );
