@@ -3,49 +3,41 @@
  * new Bitmap(src)
  * new Bitmap("role.png")
  */
+import BitmapData from "../core/BitmapData";
 import DisplayObject from "./DisplayObject";
 
 export default class Bitmap extends DisplayObject {
-  private _src: string;
-  protected _imgEl: HTMLImageElement = new Image();
-  protected _rawWidth: number;
-  protected _rawHeight: number;
-  protected _loaded: boolean;
-  constructor(src: string) {
-    super();
-    this.src = src;
+  private _data: BitmapData;
+  public get data(): BitmapData {
+    return this._data;
   }
-  public get src(): string {
-    return this._src;
-  }
-  public set src(value: string) {
-    this._src = value;
-    this._loaded = false;
-    this.load();
+  public set data(value: BitmapData) {
+    this._data = value;
+    if (this.width === 0) {
+      this.width = this._data.width;
+    }
+    if (this.height === 0) {
+      this.height = this._data.height;
+    }
+    this.graphics.clear();
+    this.graphics.drawImage(
+      this._data.data,
+      0,
+      0,
+      this._data.width,
+      this._data.height,
+      0,
+      0,
+      this.width,
+      this.height
+    );
   }
 
-  private load() {
-    this._imgEl.src = this.src;
-    this._imgEl.onload = () => {
-      this._rawWidth = this._imgEl.naturalWidth;
-      this._rawHeight = this._imgEl.naturalHeight;
-      this.width = this._rawWidth;
-      this.height = this._rawHeight;
-      this._loaded = true;
-      setTimeout(() => {
-        this.emit("load");
-      }, 0);
-      this.graphics.drawImage(
-        this._imgEl,
-        0,
-        0,
-        this._rawWidth,
-        this._rawHeight,
-        0,
-        0,
-        this.width,
-        this.height
-      );
-    };
+  constructor(src: string) {
+    super();
+    const data = new BitmapData(src);
+    data.on("load", () => {
+      this.data = data;
+    });
   }
 }

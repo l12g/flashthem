@@ -294,6 +294,7 @@ export default abstract class DisplayObject extends EventDispatcher {
 
   /**
    *
+   * 包围盒
    * @returns
    */
   public get aabb(): AABB {
@@ -310,6 +311,9 @@ export default abstract class DisplayObject extends EventDispatcher {
     };
   }
 
+  /**
+   * 获取4个顶点
+   */
   public get vertex(): Vec2[] {
     const { width, height, pivotX, pivotY } = this;
     const ox = width * pivotX * -1;
@@ -332,6 +336,18 @@ export default abstract class DisplayObject extends EventDispatcher {
 
   private updateBitmapCache() {
     this._useBitmapCache && this._bitmapCache.reset();
+  }
+
+  /**
+   * 获取与目标对象之间的夹角
+   * @param target
+   * @returns {number} 夹角，单位弧度
+   */
+  public direction(target: DisplayObject): number {
+    return Math.atan2(
+      this.globalY - target.globalY,
+      this.globalX - target.globalX
+    );
   }
 
   public dispose(): void {}

@@ -22,9 +22,9 @@ class AssetsManager extends EventDispatcher {
       if (!first) {
         this._status = "done";
         this.emit("load");
-        return;
+      } else {
+        fn();
       }
-      fn();
     };
     fn();
   }

@@ -7,7 +7,6 @@ export default class Engine {
   constructor(target: IEngine) {
     this._target = target;
     this._step = () => {
-      this._raf = requestAnimationFrame(this._step);
       const current = Date.now();
       const frameDt = 1000 / this._target.fps;
       const elapsed = Math.min(frameDt, current - this._startAt);
@@ -17,6 +16,7 @@ export default class Engine {
         this._target.onEngine(elapsed);
         this._time -= frameDt;
       }
+      this._raf = requestAnimationFrame(this._step);
     };
     this.start();
   }

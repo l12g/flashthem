@@ -1,50 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Document</title>
-</head>
+  <body>
+    <div id="fps"></div>
+    <div id="ms"></div>
+    <input type="range" id="range" min="0" max="360" />
+    <canvas
+      width="550"
+      height="400"
+      id="canvas"
+      style="border: solid 1px #000; margin: 50px"
+    ></canvas>
+    <canvas
+      width="550"
+      height="400"
+      id="canvas2"
+      style="background-color: #ddd; margin: 50px"
+    ></canvas>
+    <script src="./flashthem.js"></script>
+    <script>
+      const { Stage, Sprite, Event, Bitmap, TextField, MovieClip, Rect } =
+        flashthem;
+      const stage = new Stage("#canvas");
+      stage.debug({
+        grid: true,
+      });
+      const sp = new Sprite();
+      sp.graphics.beginFill("blue");
+      sp.graphics.drawRect(0, 0, 100, 100);
+      sp.alpha = 0.5;
+      stage.addChild(sp);
 
-<body>
-  <div id="fps"></div>
-  <div id="ms"></div>
-  <input type="range" id="range" min="0" max="360">
-  <canvas width="550" height="400" id="canvas" style="border:solid 1px #000;margin: 50px"></canvas>
-  <canvas width="550" height="400" id="canvas2" style="background-color: #ddd; margin: 50px"></canvas>
-  <script src="./flashthem.js"></script>
-  <script>
-    const { Stage, Sprite, Event, Bitmap, TextField, MovieClip, Rect } =
-      flashthem;
-    const stage = new Stage("#canvas");
-    stage.debug({
-      grid: true
-    });
-    const sp = new Sprite();
-    sp.graphics.beginFill('blue');
-    sp.graphics.drawRect(0, 0, 100, 100);
-    sp.alpha = .5;
-    // stage.addChild(sp);
-    stage.on('enter-frame', () => {
-      // sp.rotation++;
-    })
-    sp.rotation = 30;
-    sp.x = sp.y = 100;
-    sp.width = sp.height = 100;
-    sp.pivotX = sp.pivotY = -.5;
+      sp.x = sp.y = 100;
+      sp.width = sp.height = 100;
+      sp.pivotX = sp.pivotY = .5;
 
-    const bt = new Bitmap('./role.jpg');
-    stage.addChild(bt);
-    // bt.pivotX = bt.pivotY = .5; 
-    bt.x = bt.y = 100;
+      const bt = new Bitmap("./role.jpg");
+      bt.width = 50;
+      bt.height = 20;
+      stage.addChild(bt);
+      // bt.pivotX = bt.pivotY = .5;
+      bt.x = bt.y = 200;
 
-    document.querySelector('#range').oninput = e => {
-      sp.rotation = e.target.value;
-      bt.rotation = e.target.value;
-      bt.x = bt.y = +e.target.value;
-    }
-  </script>
-</body>
-
+      document.querySelector("#range").oninput = (e) => {
+        sp.rotation = e.target.value;
+        bt.rotation = e.target.value;
+        bt.x = bt.y = +e.target.value;
+      };
+      stage.on("enter-frame", () => {
+        sp.x = stage.mouseX;
+        sp.y = stage.mouseY;
+        const d = sp.direction(bt);
+        sp.rotation = (d * 180) / Math.PI;
+      });
+    </script>
+  </body>
 </html>

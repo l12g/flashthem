@@ -7,7 +7,7 @@ export default class Matrix2D {
   tx = 0;
   ty = 0;
 
-  rotate(angel) {
+  rotate(angel: number) {
     const deg = angel * DEG_TO_RAD;
     this.a = Math.cos(deg);
     this.b = -Math.sin(deg);
@@ -15,27 +15,27 @@ export default class Matrix2D {
     this.d = Math.cos(deg);
     return this;
   }
-  scale(x, y) {
-    this.a  *= x;
-    this.b  *= y;
-    this.c  *= x;
-    this.d  *= y;
+  scale(x: number, y: number) {
+    this.a *= x;
+    this.b *= y;
+    this.c *= x;
+    this.d *= y;
     return this;
   }
-  mult(x, y) {
+  mult(x: number, y: number) {
     const { a, b, c, d } = this;
     return [a * x + b * y + this.tx, c * x + d * y + this.ty];
   }
 
-  translate(x, y) {
+  translate(x: number, y: number) {
     this.tx = x;
     this.ty = y;
     return this;
   }
   toString() {
     console.log(`
-        ${this.a}--${this.c}
-        ${this.b}--${this.d}
+        ${this.a}--${this.c}--${this.tx}
+        ${this.b}--${this.d}--${this.ty}
         `);
   }
 }

@@ -12,9 +12,9 @@ export function removeFromArr(arr: any[], val: any) {
   find >= 0 && arr.splice(find, 1);
 }
 
-export function loadImg(src, imgEl) {
+export function loadImg(src: string, imgEl?: HTMLImageElement) {
   return new Promise<{ width: number; height: number; el: HTMLImageElement }>(
-    (resolve) => {
+    (resolve, reject) => {
       imgEl = imgEl || new Image();
       imgEl.onload = () => {
         resolve({
@@ -23,6 +23,7 @@ export function loadImg(src, imgEl) {
           el: imgEl,
         });
       };
+      imgEl.onerror = reject;
       imgEl.src = src;
     }
   );
@@ -51,4 +52,3 @@ export function def<T>(target: T, key: string, v: any) {
 export function getType(obj: Object) {
   return Object.prototype.toString.call(obj);
 }
-

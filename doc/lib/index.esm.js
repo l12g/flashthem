@@ -1,4 +1,4 @@
-/******************************************************************************
+/*! *****************************************************************************
 Copyright (c) Microsoft Corporation.
 
 Permission to use, copy, modify, and/or distribute this software for any
@@ -79,7 +79,7 @@ var PercentFilter = /** @class */ (function () {
         configurable: true
     });
     PercentFilter.prototype.toString = function () {
-        return "".concat(this._name, "(").concat(this.percentage, "%)");
+        return this._name + "(" + this.percentage + "%)";
     };
     return PercentFilter;
 }());
@@ -130,7 +130,7 @@ var BlurFilter = /** @class */ (function () {
         this.blur = length;
     }
     BlurFilter.prototype.toString = function () {
-        return "blur(".concat(this.blur, "px)");
+        return "blur(" + this.blur + "px)";
     };
     return BlurFilter;
 }());
@@ -523,7 +523,7 @@ var Matrix2D = /** @class */ (function () {
         return this;
     };
     Matrix2D.prototype.toString = function () {
-        console.log("\n        ".concat(this.a, "--").concat(this.c, "\n        ").concat(this.b, "--").concat(this.d, "\n        "));
+        console.log("\n        " + this.a + "--" + this.c + "--" + this.tx + "\n        " + this.b + "--" + this.d + "--" + this.ty + "\n        ");
     };
     return Matrix2D;
 }());
@@ -590,7 +590,7 @@ var Vec2 = /** @class */ (function () {
         return this.x === v.x && this.y === v.y;
     };
     Vec2.prototype.toString = function () {
-        return "Vec2(".concat(this.x, ",").concat(this.y, ")");
+        return "Vec2(" + this.x + "," + this.y + ")";
     };
     Vec2.prototype.transform = function (mtx) {
         this.x = mtx.a * this.x + mtx.c * this.y;
@@ -603,6 +603,20 @@ var Vec2 = /** @class */ (function () {
 function removeFromArr(arr, val) {
     var find = arr.findIndex(function (o) { return o === val; });
     find >= 0 && arr.splice(find, 1);
+}
+function loadImg(src, imgEl) {
+    return new Promise(function (resolve, reject) {
+        imgEl = imgEl || new Image();
+        imgEl.onload = function () {
+            resolve({
+                width: imgEl.naturalWidth,
+                height: imgEl.naturalHeight,
+                el: imgEl,
+            });
+        };
+        imgEl.onerror = reject;
+        imgEl.src = src;
+    });
 }
 function getType(obj) {
     return Object.prototype.toString.call(obj);
@@ -838,7 +852,7 @@ var DisplayObject = /** @class */ (function (_super) {
         },
         set: function (v) {
             if (v && v.constructor === DisplayObjectContainer$1) {
-                throw new Error("parent must be instance of DisplayObjectContainer,got ".concat(getType(v)));
+                throw new Error("parent must be instance of DisplayObjectContainer,got " + getType(v));
             }
             this._parent = v;
         },
@@ -969,6 +983,7 @@ var DisplayObject = /** @class */ (function (_super) {
     Object.defineProperty(DisplayObject.prototype, "aabb", {
         /**
          *
+         * 包围盒
          * @returns
          */
         get: function () {
@@ -988,6 +1003,9 @@ var DisplayObject = /** @class */ (function (_super) {
         configurable: true
     });
     Object.defineProperty(DisplayObject.prototype, "vertex", {
+        /**
+         * 获取4个顶点
+         */
         get: function () {
             var _a = this, width = _a.width, height = _a.height, pivotX = _a.pivotX, pivotY = _a.pivotY;
             var ox = width * pivotX * -1;
@@ -1011,6 +1029,14 @@ var DisplayObject = /** @class */ (function (_super) {
     });
     DisplayObject.prototype.updateBitmapCache = function () {
         this._useBitmapCache && this._bitmapCache.reset();
+    };
+    /**
+     * 获取与目标对象之间的夹角
+     * @param target
+     * @returns {number} 夹角，单位弧度
+     */
+    DisplayObject.prototype.direction = function (target) {
+        return Math.atan2(this.globalY - target.globalY, this.globalX - target.globalX);
     };
     DisplayObject.prototype.dispose = function () { };
     return DisplayObject;
@@ -1135,7 +1161,6 @@ var Engine = /** @class */ (function () {
         this._raf = 0;
         this._target = target;
         this._step = function () {
-            _this._raf = requestAnimationFrame(_this._step);
             var current = Date.now();
             var frameDt = 1000 / _this._target.fps;
             var elapsed = Math.min(frameDt, current - _this._startAt);
@@ -1145,6 +1170,7 @@ var Engine = /** @class */ (function () {
                 _this._target.onEngine(elapsed);
                 _this._time -= frameDt;
             }
+            _this._raf = requestAnimationFrame(_this._step);
         };
         this.start();
     }
@@ -1320,41 +1346,93 @@ var Stage = /** @class */ (function (_super) {
 }(DisplayObjectContainer$1));
 var Stage$1 = Stage;
 
-var Bitmap = /** @class */ (function (_super) {
-    __extends(Bitmap, _super);
-    function Bitmap(src) {
+var BitmapData = /** @class */ (function (_super) {
+    __extends(BitmapData, _super);
+    function BitmapData(src) {
         var _this = _super.call(this) || this;
-        _this._imgEl = new Image();
         _this.src = src;
         return _this;
     }
-    Object.defineProperty(Bitmap.prototype, "src", {
+    Object.defineProperty(BitmapData.prototype, "width", {
+        get: function () {
+            return this._data.width;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(BitmapData.prototype, "height", {
+        get: function () {
+            return this._data.height;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(BitmapData.prototype, "data", {
+        get: function () {
+            return this._data;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(BitmapData.prototype, "src", {
         get: function () {
             return this._src;
         },
         set: function (value) {
             this._src = value;
-            this._loaded = false;
             this.load();
         },
         enumerable: false,
         configurable: true
     });
-    Bitmap.prototype.load = function () {
+    BitmapData.prototype.load = function () {
         var _this = this;
-        this._imgEl.src = this.src;
-        this._imgEl.onload = function () {
-            _this._rawWidth = _this._imgEl.naturalWidth;
-            _this._rawHeight = _this._imgEl.naturalHeight;
-            _this.width = _this._rawWidth;
-            _this.height = _this._rawHeight;
-            _this._loaded = true;
-            setTimeout(function () {
-                _this.emit("load");
-            }, 0);
-            _this.graphics.drawImage(_this._imgEl, 0, 0, _this._rawWidth, _this._rawHeight, 0, 0, _this.width, _this.height);
-        };
+        loadImg(this.src)
+            .then(function (e) { return e.el; })
+            .then(createImageBitmap)
+            .then(function (data) {
+            _this._data = data;
+            console.log(data);
+            _this.emit("load");
+        }, function (err) {
+            console.log(err);
+        });
     };
+    BitmapData.prototype.dispose = function () {
+        _super.prototype.dispose.call(this);
+        this._data.close();
+    };
+    return BitmapData;
+}(EventDispatcher));
+
+var Bitmap = /** @class */ (function (_super) {
+    __extends(Bitmap, _super);
+    function Bitmap(src) {
+        var _this = _super.call(this) || this;
+        var data = new BitmapData(src);
+        data.on("load", function () {
+            _this.data = data;
+        });
+        return _this;
+    }
+    Object.defineProperty(Bitmap.prototype, "data", {
+        get: function () {
+            return this._data;
+        },
+        set: function (value) {
+            this._data = value;
+            if (this.width === 0) {
+                this.width = this._data.width;
+            }
+            if (this.height === 0) {
+                this.height = this._data.height;
+            }
+            this.graphics.clear();
+            this.graphics.drawImage(this._data.data, 0, 0, this._data.width, this._data.height, 0, 0, this.width, this.height);
+        },
+        enumerable: false,
+        configurable: true
+    });
     return Bitmap;
 }(DisplayObject));
 
