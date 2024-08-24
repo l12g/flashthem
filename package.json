@@ -12,7 +12,7 @@
   "license": "ISC",
   "devDependencies": {
     "rollup": "^1.15.3",
-    "rollup-plugin-typescript2": "^0.21.1",
+    "rollup-plugin-typescript2": "^0.36.0",
     "typescript": "^3.5.2"
   },
   "dependencies": {
