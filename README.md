@@ -1,3 +1,7 @@
-## 介绍
+## Introduce
 
-flashem是一个基于canvas的渲染引擎，类似于pixijs。API与flash as3保持一致，致敬伟大的“闪客”们。
+A canvas-based rendering engine,like pixijs。
+
+for the flasher!
+
+see：

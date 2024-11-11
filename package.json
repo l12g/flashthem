@@ -5,9 +5,8 @@
   "main": "flashthem.js",
   "scripts": {
     "build": "rollup -c",
-    "doc": "vite doc",
     "doc2": "docsify serve doc",
-    "doc:build": "vite build doc",
+    "doc:build": "docsify generate doc",
     "dev": "rollup -c -w"
   },
   "author": "",
